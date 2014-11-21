@@ -1,0 +1,1 @@
+var game,mainState;mainState={preload:function(){game.load.image("logo","phaser-logo-small.png")},create:function(){this.sprite=game.add.sprite(200,150,"logo")},update:function(){this.sprite.angle+=1}},game=new Phaser.Game(400,300,Phaser.AUTO,"gameDiv"),game.state.add("main",mainState),game.state.start("main");
