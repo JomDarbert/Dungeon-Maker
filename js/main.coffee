@@ -19,14 +19,8 @@ mainState =
     @movePlayer()
   
   movePlayer: ->
-    if @cursor.left.isDown then this.player.body.velocity.x = -200
-    else if @cursor.right.isDown then @player.body.velocity.x = 200
-    else if @cursor.up.isDown then @player.body.velocity.y = 200
-    else if @cursor.down.isDown then @player.body.velocity.y = -200
-    else this.player.body.velocity.x = 0
-
-    if @cursor.up.isDown and @player.body.touching.isDown
-      @player.body.velocity.y = -320
+    if game.input.mousePointer.isDown
+      game.physics.arcade.moveToPointer(@player,400)
 
 
 

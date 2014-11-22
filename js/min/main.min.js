@@ -1,1 +1,29 @@
-var game,mainState;mainState={preload:function(){return game.load.image("player","assets/star.png")},create:function(){return game.stage.backgroundColor="#3498db",game.physics.startSystem(Phaser.Physics.ARCADE),this.player=game.add.sprite(game.world.centerX,game.world.centerY,"player"),this.player.anchor.setTo(.5,.5),game.physics.arcade.enable(this.player),this.cursor=game.input.keyboard.createCursorKeys()},update:function(){return this.movePlayer()},movePlayer:function(){return this.cursor.left.isDown?this.player.body.velocity.x=-200:this.cursor.right.isDown?this.player.body.velocity.x=200:this.cursor.up.isDown?this.player.body.velocity.y=200:this.cursor.down.isDown?this.player.body.velocity.y=-200:this.player.body.velocity.x=0,this.cursor.up.isDown&&this.player.body.touching.isDown?this.player.body.velocity.y=-320:void 0}},game=new Phaser.Game(500,340,Phaser.AUTO,"gameDiv"),game.state.add("main",mainState),game.state.start("main");
+var game, mainState;
+
+mainState = {
+  preload: function() {
+    return game.load.image("player", "assets/star.png");
+  },
+  create: function() {
+    game.stage.backgroundColor = "#3498db";
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+    this.player = game.add.sprite(game.world.centerX, game.world.centerY, 'player');
+    this.player.anchor.setTo(0.5, 0.5);
+    game.physics.arcade.enable(this.player);
+    return this.cursor = game.input.keyboard.createCursorKeys();
+  },
+  update: function() {
+    return this.movePlayer();
+  },
+  movePlayer: function() {
+    if (game.input.mousePointer.isDown) {
+      return game.physics.arcade.moveToPointer(this.player, 400);
+    }
+  }
+};
+
+game = new Phaser.Game(500, 340, Phaser.AUTO, "gameDiv");
+
+game.state.add("main", mainState);
+
+game.state.start("main");
