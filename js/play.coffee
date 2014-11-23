@@ -32,9 +32,9 @@ playState =
     if not arr or arr.length is 0 or arr[0].length is 0 then return false
     rows = arr.length
     cols = arr[0].length
-    r = Math.floor(Math.random() * rows)
-    c = Math.floor(Math.random() * cols)
-    return [r,c]
+    y = Math.floor(Math.random() * rows)
+    x = Math.floor(Math.random() * cols)
+    return {x,y}
 
   createWorld: ->
     @map.addTilesetImage "ground"

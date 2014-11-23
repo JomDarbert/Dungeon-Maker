@@ -30,15 +30,18 @@ playState = {
     return dungeon;
   },
   pickRandTile: function(arr) {
-    var c, cols, r, rows;
+    var cols, rows, x, y;
     if (!arr || arr.length === 0 || arr[0].length === 0) {
       return false;
     }
     rows = arr.length;
     cols = arr[0].length;
-    r = Math.floor(Math.random() * rows);
-    c = Math.floor(Math.random() * cols);
-    return [r, c];
+    y = Math.floor(Math.random() * rows);
+    x = Math.floor(Math.random() * cols);
+    return {
+      x: x,
+      y: y
+    };
   },
   createWorld: function() {
     var cols, dungeon, pick, rows;
