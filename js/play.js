@@ -1,6 +1,6 @@
-var game, mainState;
+var playState;
 
-mainState = {
+playState = {
   preload: function() {
     game.load.image("player", "assets/star.png");
     game.load.image("ground", "assets/ground.png");
@@ -18,17 +18,36 @@ mainState = {
   update: function() {
     return game.physics.arcade.collide(this.player, this.layer);
   },
-  createWorld: function() {
-    var a, b, h, w, _i, _j;
-    this.map.addTilesetImage("ground");
-    this.layer = this.map.create("Tile Layer 1", 10, 10, 32, 32);
-    w = game.width / 32;
-    h = game.width / 32;
-    for (a = _i = 0; _i <= 10; a = ++_i) {
-      for (b = _j = 0; _j <= 10; b = ++_j) {
-        this.map.putTile(0, a, b, this.layer);
+  createDungeonArray: function(rows, cols) {
+    var c, dungeon, r, _i, _j;
+    dungeon = new Array();
+    for (r = _i = 0; 0 <= rows ? _i <= rows : _i >= rows; r = 0 <= rows ? ++_i : --_i) {
+      dungeon.push([]);
+      for (c = _j = 0; 0 <= cols ? _j <= cols : _j >= cols; c = 0 <= cols ? ++_j : --_j) {
+        dungeon[r].push(null);
       }
     }
+    return dungeon;
+  },
+  pickRandTile: function(arr) {
+    var c, cols, r, rows;
+    if (!arr || arr.length === 0 || arr[0].length === 0) {
+      return false;
+    }
+    rows = arr.length;
+    cols = arr[0].length;
+    r = Math.floor(Math.random() * rows);
+    c = Math.floor(Math.random() * cols);
+    return [r, c];
+  },
+  createWorld: function() {
+    var cols, dungeon, pick, rows;
+    this.map.addTilesetImage("ground");
+    this.layer = this.map.create("Tile Layer 1", 10, 10, 32, 32);
+    rows = game.height / 32;
+    cols = game.width / 32;
+    dungeon = this.createDungeonArray(rows, cols);
+    pick = this.pickRandTile(dungeon);
     return this.layer.resizeWorld();
   },
   moveSprite: function(ptr) {
@@ -45,9 +64,3 @@ mainState = {
     }, duration, Phaser.Easing.Linear.None, true);
   }
 };
-
-game = new Phaser.Game(640, 640, Phaser.AUTO, "game");
-
-game.state.add("main", mainState);
-
-game.state.start("main");
