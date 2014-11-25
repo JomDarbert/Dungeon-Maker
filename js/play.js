@@ -4,6 +4,7 @@ playState = {
   preload: function() {
     game.load.image("player", "assets/star.png");
     game.load.image("ground", "assets/ground.png");
+    game.load.image("wall", "assets/wall.png");
     this.map = game.add.tilemap();
     this.tileSize = 32;
     this.gameW = Math.floor(game.width / this.tileSize);
@@ -12,15 +13,34 @@ playState = {
     return this.dungeon = this.createDungeonArray(this.gameW, this.gameH);
   },
   create: function() {
+    var groundObj, toBuild, wallObj;
     game.stage.backgroundColor = "#3498db";
-    game.physics.startSystem(Phaser.Physics.ARCADE);
-    this.player = game.add.sprite(game.world.centerX, game.world.centerY, 'player');
-    this.player.anchor.setTo(0.5, 0.5);
-    game.physics.arcade.enable(this.player);
-    game.input.onDown.add(this.moveSprite, this);
-    this.map.addTilesetImage("ground");
-    this.placeBlocks(5, "test1");
-    this.placeBlocks(5, "test1");
+
+    /*
+    game.physics.startSystem Phaser.Physics.ARCADE
+    
+    @player = game.add.sprite(game.world.centerX, game.world.centerY, 'player')
+    @player.anchor.setTo 0.5, 0.5
+    
+    game.physics.arcade.enable @player
+    game.input.onDown.add @moveSprite, this
+     */
+    this.map.addTilesetImage("ground", "ground", 32, 32, null, null, 0);
+    this.map.addTilesetImage("wall", "wall", 32, 32, null, null, 1);
+    toBuild = [];
+    groundObj = {
+      name: "ground",
+      num: 5,
+      gid: 0
+    };
+    wallObj = {
+      name: "ground",
+      num: 5,
+      gid: 1
+    };
+    toBuild.push(groundObj);
+    toBuild.push(wallObj);
+    this.placeBlocks(toBuild);
   },
   update: function() {},
   createDungeonArray: function(cols, rows) {
@@ -78,46 +98,61 @@ playState = {
     }
     return avail;
   },
-  placeBlocks: function(size, name) {
-    var avail, blob, count, current, last, layer, next, start, type, _results;
-    layer = this.map.create("test", this.gameW, this.gameH, this.tileSize, this.tileSize);
+  placeBlocks: function(obj) {
+    var a, availTiles, blob, block, count, current, fix, last, layer, next, o, start, _i, _len, _results;
+    layer = this.map.create("dungeon", this.gameW, this.gameH, this.tileSize, this.tileSize);
     layer.resizeWorld();
-    start = this.randTile(this.dungeon, layer);
-    count = 0;
-    blob = [];
-    this.map.putTile(0, start.x, start.y, layer);
-    if (this.gameA < size) {
-      throw new Error("Requested blob size bigger than game size");
-    }
     _results = [];
-    while (true) {
-      if (typeof current === "undefined" || current === null) {
-        current = this.map.getTile(start.x, start.y, layer, true);
+    for (_i = 0, _len = obj.length; _i < _len; _i++) {
+      o = obj[_i];
+      start = this.randTile(this.dungeon, layer);
+      count = 0;
+      blob = [];
+      if (this.gameA < o.gid) {
+        throw new Error("Requested blob size bigger than game size");
       }
-      last = null;
-      type = 0;
-      avail = this.getAvail(current);
-      this.map.putTile(type, current.x, current.y, layer);
-      if (avail.length > 0) {
-        next = this.randElem(avail);
-      } else {
-        throw new Error("Won't fit!");
-
-        /*
-        for block in blob
-          a = @getAvail(block)
-          console.log a.length
-          console.log a.index
-         */
-      }
-      blob.push(current);
-      last = current;
-      current = next;
-      if (!(++count < size)) {
-        break;
-      } else {
-        _results.push(void 0);
-      }
+      _results.push((function() {
+        var _j, _len1, _results1;
+        _results1 = [];
+        while (true) {
+          if (typeof current === "undefined" || current === null) {
+            current = this.map.getTile(start.x, start.y, layer, true);
+          }
+          last = null;
+          availTiles = this.getAvail(current);
+          this.map.putTile(o.gid, current.x, current.y, layer);
+          if (availTiles.length > 0) {
+            next = this.randElem(availTiles);
+            blob.push(current);
+            last = current;
+            current = next;
+            count++;
+          } else {
+            console.log("crap");
+            fix = [];
+            for (_j = 0, _len1 = blob.length; _j < _len1; _j++) {
+              block = blob[_j];
+              a = this.getAvail(block);
+              if (a.length > 0) {
+                fix.push(block);
+              }
+            }
+            if (fix.length > 0) {
+              current = this.randElem(fix);
+              blob = fix;
+            } else {
+              console.log("double crap");
+              current = this.randTile(this.dungeon, layer);
+            }
+          }
+          if (!(count < o.num)) {
+            break;
+          } else {
+            _results1.push(void 0);
+          }
+        }
+        return _results1;
+      }).call(this));
     }
     return _results;
   },

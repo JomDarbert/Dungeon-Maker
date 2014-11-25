@@ -1,7 +1,8 @@
 playState =
   preload: ->
     game.load.image "player", "assets/star.png"
-    game.load.image("ground", "assets/ground.png")
+    game.load.image "ground", "assets/ground.png"
+    game.load.image "wall", "assets/wall.png"
     @map = game.add.tilemap()
     @tileSize    = 32
     @gameW       = Math.floor(game.width/@tileSize)
@@ -11,6 +12,7 @@ playState =
 
   create: ->
     game.stage.backgroundColor = "#3498db"
+    ###
     game.physics.startSystem Phaser.Physics.ARCADE
 
     @player = game.add.sprite(game.world.centerX, game.world.centerY, 'player')
@@ -18,11 +20,25 @@ playState =
 
     game.physics.arcade.enable @player
     game.input.onDown.add @moveSprite, this
+    ###
+    @map.addTilesetImage("ground","ground",32,32,null,null,0)
+    @map.addTilesetImage("wall","wall",32,32,null,null,1)
 
-    @map.addTilesetImage "ground" # Replace with function's type
+    toBuild = []
+    groundObj = 
+      name: "ground"
+      num: 5
+      gid: 0
 
-    @placeBlocks(5,"test1")
-    @placeBlocks(5,"test1")
+    wallObj =
+      name: "ground"
+      num: 5
+      gid: 1
+
+    toBuild.push groundObj
+    toBuild.push wallObj
+
+    @placeBlocks(toBuild)
     return
 
   update: ->
@@ -66,46 +82,53 @@ playState =
       avail.push val
     return avail
 
-  placeBlocks: (size,name) ->
-    layer = @map.create("test", @gameW, @gameH, @tileSize, @tileSize)
+  placeBlocks: (obj) ->
+    layer = @map.create("dungeon", @gameW, @gameH, @tileSize, @tileSize)
     layer.resizeWorld()
 
-    start       = @randTile(@dungeon,layer)
-    count       = 0
-    blob        = []
+    for o in obj
+      start       = @randTile(@dungeon,layer)
+      count       = 0
+      blob        = []
 
-    # Place first tile in a random unallocated spot
-    @map.putTile(0,start.x,start.y,layer)
+      # Catch errors
+      # WHAT ABOUT 'NO AREAS AVAILABLE THAT WILL FIT THAT SIZE'
+      if @gameA < o.gid then throw new Error "Requested blob size bigger than game size"
 
-    # Catch errors
-    # WHAT ABOUT 'NO AREAS AVAILABLE THAT WILL FIT THAT SIZE'
-    if @gameA < size then throw new Error "Requested blob size bigger than game size"
+      # Loop for size of blob, placing tiles where they will fit
+      loop
+        if not current? then current = @map.getTile(start.x,start.y,layer,true)
+        last  = null
+        availTiles = @getAvail(current)
+        @map.putTile(o.gid,current.x,current.y,layer)
 
-    # Loop for size of blob, placing tiles where they will fit
-    loop
-      if not current? then current = @map.getTile(start.x,start.y,layer,true)
-      last  = null
-      type  = 0 # temporary variable - replace with function's type
-      avail = @getAvail(current)
-      @map.putTile(type,current.x,current.y,layer)
+        # If some direction is available, pick a random one
+        if availTiles.length > 0
+          next = @randElem(availTiles)
+          blob.push current
+          last = current
+          current = next
+          count++
 
-      # If some direction is available, pick a random one
-      if avail.length > 0 then next = @randElem(avail)
+        # No current paths to travel - pick another spot to check in blob
 
-      # No current paths to travel - pick another spot to check in blob
-      else
-        throw new Error("Won't fit!")
-        ###
-        for block in blob
-          a = @getAvail(block)
-          console.log a.length
-          console.log a.index
-        ###
+        # PICK UIP HEREeee!!!
+        else
+          console.log "crap"
+          fix = []
+          for block in blob
+            a = @getAvail(block)
+            if a.length > 0 then fix.push block
 
-      blob.push current
-      last = current
-      current = next
-      break unless ++count < size
+          if fix.length > 0
+            current = @randElem(fix)
+            blob = fix
+          else
+            console.log "double crap"
+            current = @randTile(@dungeon,layer)
+
+
+        break unless count < o.num
 
 
   moveSprite: (ptr) ->
