@@ -1,3 +1,7 @@
+
+/*
+Need a fix for spidering resources
+ */
 var playState;
 
 playState = {
@@ -9,8 +13,7 @@ playState = {
     this.tileSize = 32;
     this.gameW = Math.floor(game.width / this.tileSize);
     this.gameH = Math.floor(game.height / this.tileSize);
-    this.gameA = this.gameW * this.gameH;
-    return this.dungeon = this.createDungeonArray(this.gameW, this.gameH);
+    return this.gameA = this.gameW * this.gameH;
   },
   create: function() {
     var groundObj, toBuild, wallObj;
@@ -30,12 +33,12 @@ playState = {
     toBuild = [];
     groundObj = {
       name: "ground",
-      num: 5,
+      num: 10,
       gid: 0
     };
     wallObj = {
       name: "ground",
-      num: 5,
+      num: 10,
       gid: 1
     };
     toBuild.push(groundObj);
@@ -43,109 +46,84 @@ playState = {
     this.placeBlocks(toBuild);
   },
   update: function() {},
-  createDungeonArray: function(cols, rows) {
-    var c, dungeon, r, _i, _j, _ref, _ref1;
-    dungeon = new Array();
-    for (r = _i = 0, _ref = rows - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; r = 0 <= _ref ? ++_i : --_i) {
-      dungeon.push([]);
-      for (c = _j = 0, _ref1 = cols - 1; 0 <= _ref1 ? _j <= _ref1 : _j >= _ref1; c = 0 <= _ref1 ? ++_j : --_j) {
-        dungeon[r].push(null);
+  randOpenTile: function(layer) {
+    var open;
+    open = layer.layer.data.filter(function(y) {
+      var x, _i, _len;
+      for (_i = 0, _len = y.length; _i < _len; _i++) {
+        x = y[_i];
+        if (x.index === -1) {
+          return 1;
+        }
       }
+    });
+    if (open.length <= 0) {
+      return false;
     }
-    return dungeon;
-  },
-  randTile: function(arr, layer) {
-    var cols, rows, tile, x, y;
-    if ((arr == null) || arr.length === 0 || arr[0].length === 0) {
-      throw new Error("Dungeon array is not properly defined");
-    }
-    while (true) {
-      rows = arr.length;
-      cols = arr[0].length;
-      y = Math.floor(Math.random() * rows);
-      x = Math.floor(Math.random() * cols);
-      tile = this.map.getTile(x, y, this.layer, true);
-      if (tile.index === -1) {
-        break;
-      }
-    }
-    return tile;
+    return this.randElem(this.randElem(open));
   },
   randElem: function(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
   },
   getAvail: function(tile) {
-    var adj, avail, dir, down, index, left, maxH, maxW, right, up, val;
-    index = this.map.getLayer();
-    up = this.map.getTileAbove(index, tile.x, tile.y);
-    right = this.map.getTileRight(index, tile.x, tile.y);
-    down = this.map.getTileBelow(index, tile.x, tile.y);
-    left = this.map.getTileLeft(index, tile.x, tile.y);
+    var adj, available, dir, val;
     adj = {
-      up: up,
-      right: right,
-      down: down,
-      left: left
+      up: this.map.getTileAbove(this.map.getLayer(), tile.x, tile.y),
+      right: this.map.getTileRight(this.map.getLayer(), tile.x, tile.y),
+      down: this.map.getTileBelow(this.map.getLayer(), tile.x, tile.y),
+      left: this.map.getTileLeft(this.map.getLayer(), tile.x, tile.y)
     };
-    avail = [];
-    maxW = game.width / this.tileSize - 1;
-    maxH = game.height / this.tileSize - 1;
+    available = [];
     for (dir in adj) {
       val = adj[dir];
       if (val !== null && val.index === -1) {
-        avail.push(val);
+        available.push(val);
       }
     }
-    return avail;
+    return available;
   },
-  placeBlocks: function(obj) {
-    var a, availTiles, blob, block, count, current, fix, last, layer, next, o, start, _i, _len, _results;
+  placeBlocks: function(node) {
+    var availTiles, blob, count, current, layer, o, start, _i, _len, _results;
     layer = this.map.create("dungeon", this.gameW, this.gameH, this.tileSize, this.tileSize);
     layer.resizeWorld();
     _results = [];
-    for (_i = 0, _len = obj.length; _i < _len; _i++) {
-      o = obj[_i];
-      start = this.randTile(this.dungeon, layer);
+    for (_i = 0, _len = node.length; _i < _len; _i++) {
+      o = node[_i];
+      start = this.randOpenTile(layer);
       count = 0;
       blob = [];
       if (this.gameA < o.gid) {
-        throw new Error("Requested blob size bigger than game size");
+        throw new Error("Requested node size bigger than game size");
+      }
+      if (start === false) {
+        break;
       }
       _results.push((function() {
-        var _j, _len1, _results1;
+        var _results1;
         _results1 = [];
         while (true) {
           if (typeof current === "undefined" || current === null) {
             current = this.map.getTile(start.x, start.y, layer, true);
           }
-          last = null;
-          availTiles = this.getAvail(current);
           this.map.putTile(o.gid, current.x, current.y, layer);
+          availTiles = this.getAvail(current);
           if (availTiles.length > 0) {
-            next = this.randElem(availTiles);
             blob.push(current);
-            last = current;
-            current = next;
+            current = this.randElem(availTiles);
             count++;
           } else {
-            console.log("crap");
-            fix = [];
-            for (_j = 0, _len1 = blob.length; _j < _len1; _j++) {
-              block = blob[_j];
-              a = this.getAvail(block);
-              if (a.length > 0) {
-                fix.push(block);
+            blob = blob.filter(function(b) {
+              if (playState.getAvail(b).length > 0) {
+                return 1;
               }
-            }
-            if (fix.length > 0) {
-              current = this.randElem(fix);
-              blob = fix;
+            });
+            if (blob.length > 0) {
+              current = this.randElem(blob);
             } else {
-              console.log("double crap");
-              current = this.randTile(this.dungeon, layer);
+              current = this.randOpenTile(layer);
             }
           }
-          if (!(count < o.num)) {
+          if (count >= o.num || current === false) {
             break;
           } else {
             _results1.push(void 0);
