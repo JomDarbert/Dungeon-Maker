@@ -30,12 +30,12 @@ playState =
     toBuild = []
     groundObj = 
       name: "ground"
-      num: 10
+      num: 30
       gid: 0
 
     wallObj =
       name: "ground"
-      num: 10
+      num: 30
       gid: 1
 
     toBuild.push groundObj
@@ -61,8 +61,8 @@ playState =
       down: @map.getTileBelow(@map.getLayer(),tile.x,tile.y) 
       left: @map.getTileLeft(@map.getLayer(),tile.x,tile.y)
     available = []
-    for dir,val of adj when val isnt null and val.index is -1
-      available.push val
+    for dir,tile of adj when tile isnt null and tile.index is -1
+      available.push {tile: tile, dir: dir}
     return available
 
   placeBlocks: (node) ->
@@ -70,30 +70,29 @@ playState =
     layer.resizeWorld()
 
     for o in node
-      start = @randOpenTile(layer)
       count = 0
-      blob  = []
+      log = []
 
       # Catch errors
       if @gameA < o.gid then throw new Error "Requested node size bigger than game size"
-      if start is false then break
 
       # Loop for size of node, placing tiles where they will fit
       loop
-        if not current? then current = @map.getTile(start.x,start.y,layer,true)
-        @map.putTile(o.gid,current.x,current.y,layer)
+        if not current? then current = {tile: @randOpenTile(layer), dir: null}
+        @map.putTile(o.gid,current.tile.x,current.tile.y,layer)
 
         # If some direction is available, pick a random one
-        availTiles = @getAvail(current)
-        if availTiles.length > 0
-          blob.push current
-          current = @randElem(availTiles)
+        available = @getAvail(current.tile)
+        if available.length > 0
+          log.push current
+          current = @randElem(available)
           count++
-        # Otherwise no current paths are available to travel, so pick another spot to check in blob
+
+        # Otherwise no current paths are available to travel, so pick another spot to check in log
         else
-          blob = blob.filter (b) -> if playState.getAvail(b).length > 0 then return 1 
-          if blob.length > 0 then current = @randElem(blob)
-          else current = @randOpenTile(layer)
+          log = log.filter (b) -> if playState.getAvail(b.tile).length > 0 then return 1
+          if log.length > 0 then current = @randElem(log)
+          else current = {tile: @randOpenTile(layer), dir: null}
         break if count >= o.num or current is false
 
   moveSprite: (ptr) ->

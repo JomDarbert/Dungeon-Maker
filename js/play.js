@@ -33,12 +33,12 @@ playState = {
     toBuild = [];
     groundObj = {
       name: "ground",
-      num: 10,
+      num: 30,
       gid: 0
     };
     wallObj = {
       name: "ground",
-      num: 10,
+      num: 30,
       gid: 1
     };
     toBuild.push(groundObj);
@@ -66,7 +66,7 @@ playState = {
     return arr[Math.floor(Math.random() * arr.length)];
   },
   getAvail: function(tile) {
-    var adj, available, dir, val;
+    var adj, available, dir;
     adj = {
       up: this.map.getTileAbove(this.map.getLayer(), tile.x, tile.y),
       right: this.map.getTileRight(this.map.getLayer(), tile.x, tile.y),
@@ -75,52 +75,57 @@ playState = {
     };
     available = [];
     for (dir in adj) {
-      val = adj[dir];
-      if (val !== null && val.index === -1) {
-        available.push(val);
+      tile = adj[dir];
+      if (tile !== null && tile.index === -1) {
+        available.push({
+          tile: tile,
+          dir: dir
+        });
       }
     }
     return available;
   },
   placeBlocks: function(node) {
-    var availTiles, blob, count, current, layer, o, start, _i, _len, _results;
+    var available, count, current, layer, log, o, _i, _len, _results;
     layer = this.map.create("dungeon", this.gameW, this.gameH, this.tileSize, this.tileSize);
     layer.resizeWorld();
     _results = [];
     for (_i = 0, _len = node.length; _i < _len; _i++) {
       o = node[_i];
-      start = this.randOpenTile(layer);
       count = 0;
-      blob = [];
+      log = [];
       if (this.gameA < o.gid) {
         throw new Error("Requested node size bigger than game size");
-      }
-      if (start === false) {
-        break;
       }
       _results.push((function() {
         var _results1;
         _results1 = [];
         while (true) {
           if (typeof current === "undefined" || current === null) {
-            current = this.map.getTile(start.x, start.y, layer, true);
+            current = {
+              tile: this.randOpenTile(layer),
+              dir: null
+            };
           }
-          this.map.putTile(o.gid, current.x, current.y, layer);
-          availTiles = this.getAvail(current);
-          if (availTiles.length > 0) {
-            blob.push(current);
-            current = this.randElem(availTiles);
+          this.map.putTile(o.gid, current.tile.x, current.tile.y, layer);
+          available = this.getAvail(current.tile);
+          if (available.length > 0) {
+            log.push(current);
+            current = this.randElem(available);
             count++;
           } else {
-            blob = blob.filter(function(b) {
-              if (playState.getAvail(b).length > 0) {
+            log = log.filter(function(b) {
+              if (playState.getAvail(b.tile).length > 0) {
                 return 1;
               }
             });
-            if (blob.length > 0) {
-              current = this.randElem(blob);
+            if (log.length > 0) {
+              current = this.randElem(log);
             } else {
-              current = this.randOpenTile(layer);
+              current = {
+                tile: this.randOpenTile(layer),
+                dir: null
+              };
             }
           }
           if (count >= o.num || current === false) {
