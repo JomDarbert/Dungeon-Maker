@@ -4,6 +4,10 @@ Clear dungeon
 Button for testing
 resize game?
 camera follow mouse?
+
+Create nodes for each resource type
+Node - own class
+  max distance from center it is allowed to spider out to
 ###
 
 class window.Dungeon
@@ -37,9 +41,11 @@ class window.Dungeon
     counts = 
       total:  {up: 0, right: 0, down: 0, left: 0}
       recent: {up: 0, right: 0, down: 0, left: 0}
+      last:   null
       sortedRecent: []
       sortedTotal: []
 
+    counts.last = log[log.length-1]
     for entry,key in log when entry? and entry.dir?
       counts.total[entry.dir]++
       if key <= numRecent then counts.recent[entry.dir]++
@@ -75,22 +81,30 @@ class window.Dungeon
 
         # If more than one direction available, apply randomness checker
         if available.length > 1
-          recent = @countDirs(log,2).sortedRecent
+          dirs = @countDirs(log,5)
+          recent = dirs.sortedRecent
+          last = dirs.last
           priority = []
 
-          console.log recent
+          # Don't go in the same direction twice
+          if last?
+            available = available.filter (x) ->
+              if x.dir isnt last.dir then return 1
 
           # Prioritize least traveled directions
           for tile in available 
+            console.log tile.dir
             if tile.dir is recent[3][0] or tile.dir is recent[2][0]
-              console.log "prioprity found"
-              priority.push tile
+              if last? and tile.dir isnt last.dir
+                priority.push tile
 
           log.push current
+          if last? then console.log "last: "+last.dir
 
           if priority.length > 0 then current = @randElem(priority)
           else current = @randElem(available)
-
+          console.log "current: "+current.dir
+          console.log "-----"
           count++
 
         # Otherwise, go in the only available direction

@@ -5,6 +5,10 @@ Clear dungeon
 Button for testing
 resize game?
 camera follow mouse?
+
+Create nodes for each resource type
+Node - own class
+  max distance from center it is allowed to spider out to
  */
 window.Dungeon = (function() {
   function Dungeon(width, height, tileSize, game, map, randomness) {
@@ -91,9 +95,11 @@ window.Dungeon = (function() {
         down: 0,
         left: 0
       },
+      last: null,
       sortedRecent: [],
       sortedTotal: []
     };
+    counts.last = log[log.length - 1];
     for (key = _i = 0, _len = log.length; _i < _len; key = ++_i) {
       entry = log[key];
       if (!((entry != null) && (entry.dir != null))) {
@@ -122,7 +128,7 @@ window.Dungeon = (function() {
   };
 
   Dungeon.prototype.placeBlocks = function(area) {
-    var available, count, current, dung, layer, log, o, priority, recent, tile, _i, _len, _results;
+    var available, count, current, dirs, dung, last, layer, log, o, priority, recent, tile, _i, _len, _results;
     layer = this.map.create("dungeon", this.width, this.height, this.tileSize, this.tileSize);
     layer.resizeWorld();
     dung = this;
@@ -145,22 +151,37 @@ window.Dungeon = (function() {
           this.map.putTile(o.gid, current.tile.x, current.tile.y, layer);
           available = this.getAvail(current.tile);
           if (available.length > 1) {
-            recent = this.countDirs(log, 2).sortedRecent;
+            dirs = this.countDirs(log, 5);
+            recent = dirs.sortedRecent;
+            last = dirs.last;
             priority = [];
-            console.log(recent);
+            if (last != null) {
+              available = available.filter(function(x) {
+                if (x.dir !== last.dir) {
+                  return 1;
+                }
+              });
+            }
             for (_j = 0, _len1 = available.length; _j < _len1; _j++) {
               tile = available[_j];
+              console.log(tile.dir);
               if (tile.dir === recent[3][0] || tile.dir === recent[2][0]) {
-                console.log("prioprity found");
-                priority.push(tile);
+                if ((last != null) && tile.dir !== last.dir) {
+                  priority.push(tile);
+                }
               }
             }
             log.push(current);
+            if (last != null) {
+              console.log("last: " + last.dir);
+            }
             if (priority.length > 0) {
               current = this.randElem(priority);
             } else {
               current = this.randElem(available);
             }
+            console.log("current: " + current.dir);
+            console.log("-----");
             count++;
           }
           if (available.length > 0) {

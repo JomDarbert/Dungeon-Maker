@@ -3,6 +3,8 @@ playState =
     game.load.image "player", "assets/star.png"
     game.load.image "ground", "assets/ground.png"
     game.load.image "wall", "assets/wall.png"
+    game.load.image "water", "assets/water.png"
+    game.load.image "lava", "assets/lava.png"
     @map = game.add.tilemap()
 
   create: ->
@@ -18,6 +20,8 @@ playState =
     ###
     @map.addTilesetImage("ground","ground",32,32,null,null,0)
     @map.addTilesetImage("wall","wall",32,32,null,null,1)
+    @map.addTilesetImage("water","water",32,32,null,null,2)
+    @map.addTilesetImage("lava","lava",32,32,null,null,3)
 
     w = game.width/32
     h = game.width/32
@@ -26,18 +30,30 @@ playState =
     toBuild = []
     groundObj = 
       name: "ground"
-      num: 50
+      num: 0.05*a
       gid: 0
 
     wallObj =
       name: "ground"
-      num: 50
+      num: 0.05*a
       gid: 1
+
+    waterObj =
+      name: "water"
+      num: 0.15*a
+      gid: 2
+
+    lavaObj =
+      name: "lava"
+      num: 0.05*a
+      gid: 3
 
     dung = new window.Dungeon(20,20,32,@game,@map)
 
     toBuild.push groundObj
     toBuild.push wallObj
+    toBuild.push waterObj
+    toBuild.push lavaObj
 
     dung.placeBlocks(toBuild)
     return
