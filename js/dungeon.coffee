@@ -3,14 +3,17 @@ Need a fix for spidering resources
 Clear dungeon
 Button for testing
 resize game?
+camera follow mouse?
 ###
 
 class window.Dungeon
-  constructor: (@width,@height,@tileSize,@game,@map) ->
-    @width = 20 unless @width?
-    @height = 20 unless @width?
-    @numTiles = @width*@height unless not @width? or not @height?
-    @map = null unless @map
+  constructor: (@width,@height,@tileSize,@game,@map,@randomness) ->
+    @width      = 20    unless @width?
+    @height     = 20    unless @width?
+    @tileSize   = 32    unless @tileSize?
+    @map        = null  unless @map?
+    @randomness = 5     unless @randomness?
+    @numTiles   = @width*@height unless not @width? or not @height?
 
   randOpenTile: (layer) ->
     open = layer.layer.data.filter (y) -> return 1 for x in y when x.index is -1
@@ -30,6 +33,29 @@ class window.Dungeon
       available.push {tile: tile, dir: dir}
     return available
 
+  countDirs: (log,numRecent) ->
+    counts = 
+      total:  {up: 0, right: 0, down: 0, left: 0}
+      recent: {up: 0, right: 0, down: 0, left: 0}
+      sortedRecent: []
+      sortedTotal: []
+
+    for entry,key in log when entry? and entry.dir?
+      counts.total[entry.dir]++
+      if key <= numRecent then counts.recent[entry.dir]++
+
+    st = []
+    sr = []
+    for x of counts.recent
+      sr.push [x,counts.recent[x]]
+
+    for y of counts.total
+      st.push [y,counts.total[y]]
+
+    counts.sortedRecent = sr.sort (a,b) -> b[1] - a[1]
+    counts.sortedTotal  = st.sort (a,b) -> b[1] - a[1]
+    return counts
+
   placeBlocks: (area) ->
     layer = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
     layer.resizeWorld()
@@ -38,14 +64,36 @@ class window.Dungeon
     for o in area
       count = 0
       log = []
+      current = null
 
       # Loop for size of objects, placing tiles where they will fit
       loop
         if not current? then current = {tile: @randOpenTile(layer), dir: null}
         @map.putTile(o.gid,current.tile.x,current.tile.y,layer)
 
-        # If some direction is available, pick a random one and increase count
         available = @getAvail(current.tile)
+
+        # If more than one direction available, apply randomness checker
+        if available.length > 1
+          recent = @countDirs(log,2).sortedRecent
+          priority = []
+
+          console.log recent
+
+          # Prioritize least traveled directions
+          for tile in available 
+            if tile.dir is recent[3][0] or tile.dir is recent[2][0]
+              console.log "prioprity found"
+              priority.push tile
+
+          log.push current
+
+          if priority.length > 0 then current = @randElem(priority)
+          else current = @randElem(available)
+
+          count++
+
+        # Otherwise, go in the only available direction
         if available.length > 0
           log.push current
           current = @randElem(available)

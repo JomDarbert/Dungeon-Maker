@@ -19,15 +19,19 @@ playState =
     @map.addTilesetImage("ground","ground",32,32,null,null,0)
     @map.addTilesetImage("wall","wall",32,32,null,null,1)
 
+    w = game.width/32
+    h = game.width/32
+    a = w*h
+
     toBuild = []
     groundObj = 
       name: "ground"
-      num: 30
+      num: 50
       gid: 0
 
     wallObj =
       name: "ground"
-      num: 30
+      num: 50
       gid: 1
 
     dung = new window.Dungeon(20,20,32,@game,@map)

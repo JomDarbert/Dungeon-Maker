@@ -4,25 +4,33 @@ Need a fix for spidering resources
 Clear dungeon
 Button for testing
 resize game?
+camera follow mouse?
  */
 window.Dungeon = (function() {
-  function Dungeon(width, height, tileSize, game, map) {
+  function Dungeon(width, height, tileSize, game, map, randomness) {
     this.width = width;
     this.height = height;
     this.tileSize = tileSize;
     this.game = game;
     this.map = map;
+    this.randomness = randomness;
     if (this.width == null) {
       this.width = 20;
     }
     if (this.width == null) {
       this.height = 20;
     }
+    if (this.tileSize == null) {
+      this.tileSize = 32;
+    }
+    if (this.map == null) {
+      this.map = null;
+    }
+    if (this.randomness == null) {
+      this.randomness = 5;
+    }
     if (!((this.width == null) || (this.height == null))) {
       this.numTiles = this.width * this.height;
-    }
-    if (!this.map) {
-      this.map = null;
     }
   }
 
@@ -68,8 +76,53 @@ window.Dungeon = (function() {
     return available;
   };
 
+  Dungeon.prototype.countDirs = function(log, numRecent) {
+    var counts, entry, key, sr, st, x, y, _i, _len;
+    counts = {
+      total: {
+        up: 0,
+        right: 0,
+        down: 0,
+        left: 0
+      },
+      recent: {
+        up: 0,
+        right: 0,
+        down: 0,
+        left: 0
+      },
+      sortedRecent: [],
+      sortedTotal: []
+    };
+    for (key = _i = 0, _len = log.length; _i < _len; key = ++_i) {
+      entry = log[key];
+      if (!((entry != null) && (entry.dir != null))) {
+        continue;
+      }
+      counts.total[entry.dir]++;
+      if (key <= numRecent) {
+        counts.recent[entry.dir]++;
+      }
+    }
+    st = [];
+    sr = [];
+    for (x in counts.recent) {
+      sr.push([x, counts.recent[x]]);
+    }
+    for (y in counts.total) {
+      st.push([y, counts.total[y]]);
+    }
+    counts.sortedRecent = sr.sort(function(a, b) {
+      return b[1] - a[1];
+    });
+    counts.sortedTotal = st.sort(function(a, b) {
+      return b[1] - a[1];
+    });
+    return counts;
+  };
+
   Dungeon.prototype.placeBlocks = function(area) {
-    var available, count, current, dung, layer, log, o, _i, _len, _results;
+    var available, count, current, dung, layer, log, o, priority, recent, tile, _i, _len, _results;
     layer = this.map.create("dungeon", this.width, this.height, this.tileSize, this.tileSize);
     layer.resizeWorld();
     dung = this;
@@ -78,11 +131,12 @@ window.Dungeon = (function() {
       o = area[_i];
       count = 0;
       log = [];
+      current = null;
       _results.push((function() {
-        var _results1;
+        var _j, _len1, _results1;
         _results1 = [];
         while (true) {
-          if (typeof current === "undefined" || current === null) {
+          if (current == null) {
             current = {
               tile: this.randOpenTile(layer),
               dir: null
@@ -90,6 +144,25 @@ window.Dungeon = (function() {
           }
           this.map.putTile(o.gid, current.tile.x, current.tile.y, layer);
           available = this.getAvail(current.tile);
+          if (available.length > 1) {
+            recent = this.countDirs(log, 2).sortedRecent;
+            priority = [];
+            console.log(recent);
+            for (_j = 0, _len1 = available.length; _j < _len1; _j++) {
+              tile = available[_j];
+              if (tile.dir === recent[3][0] || tile.dir === recent[2][0]) {
+                console.log("prioprity found");
+                priority.push(tile);
+              }
+            }
+            log.push(current);
+            if (priority.length > 0) {
+              current = this.randElem(priority);
+            } else {
+              current = this.randElem(available);
+            }
+            count++;
+          }
           if (available.length > 0) {
             log.push(current);
             current = this.randElem(available);

@@ -4,7 +4,7 @@ winW = window.innerWidth;
 
 winH = window.innerHeight;
 
-game = new Phaser.Game(32 * 20, 32 * 20, Phaser.AUTO, "game");
+game = new Phaser.Game(800, 600, Phaser.AUTO, "game");
 
 game.state.add("play", playState);
 
