@@ -9,24 +9,24 @@ Create nodes for each resource type
 Node - own class
   max distance from center it is allowed to spider out to
 ###
+class window.Blob
+  constructor: (@center,@maxDist,@size,@gid,@map) ->
+    @center      = null    unless @center?
+    @maxDist     = 20      unless @maxDist?
+    @current     = @center unless @current?
+    @size        = 20      unless @size?
+    @gid         = 0       unless @gid?
+    @map         = null    unless @map?
 
-class window.Dungeon
-  constructor: (@width,@height,@tileSize,@game,@map,@randomness) ->
-    @width      = 20    unless @width?
-    @height     = 20    unless @width?
-    @tileSize   = 32    unless @tileSize?
-    @map        = null  unless @map?
-    @randomness = 5     unless @randomness?
-    @numTiles   = @width*@height unless not @width? or not @height?
+  distFromStart: ->
+    x1 = @center.x
+    y1 = @center.y
+    x2 = @current.x
+    y2 = @current.y
+    return Math.sqrt( (x2-=x1)*x2 + (y2-=y1)*y2 )
 
-  randOpenTile: (layer) ->
-    open = layer.layer.data.filter (y) -> return 1 for x in y when x.index is -1
-    if open.length <= 0 then return false
-    return @randElem(@randElem(open))
-
-  randElem: (arr) -> return arr[Math.floor(Math.random()*arr.length)]
-
-  getAvail: (tile) ->
+  getAvailable: (tile) ->
+    tile = @current unless tile?
     adj = 
       up: @map.getTileAbove(@map.getLayer(),tile.x,tile.y) 
       right: @map.getTileRight(@map.getLayer(),tile.x,tile.y) 
@@ -36,6 +36,36 @@ class window.Dungeon
     for dir,tile of adj when tile isnt null and tile.index is -1
       available.push {tile: tile, dir: dir}
     return available
+
+class window.Dungeon
+  constructor: (@width,@height,@tileSize,@game,@map,@blobs,@randomness) ->
+    @width      = 20    unless @width?
+    @height     = 20    unless @width?
+    @tileSize   = 32    unless @tileSize?
+    @map        = null  unless @map?
+    @blobs      = null  unless @blobs?
+    @randomness = 5     unless @randomness?
+    @numTiles   = @width*@height unless not @width? or not @height?
+
+  build: ->
+    layer = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
+    layer.resizeWorld()
+
+    for b in @blobs
+      blob = new Blob(@randOpenTile(layer),b.maxDist,b.size,b.gid,@map)
+      console.log blob
+      @map.putTile(blob.gid,blob.center.x,blob.center.y,layer)
+      available = blob.getAvailable()
+      console.log available
+
+  randOpenTile: (layer) ->
+    open = layer.layer.data.filter (y) -> return 1 for x in y when x.index is -1
+    if open.length <= 0 then return false
+    return @randElem(@randElem(open))
+
+  randElem: (arr) -> return arr[Math.floor(Math.random()*arr.length)]
+
+
 
   countDirs: (log,numRecent) ->
     counts = 
@@ -62,16 +92,20 @@ class window.Dungeon
     counts.sortedTotal  = st.sort (a,b) -> b[1] - a[1]
     return counts
 
-  placeBlocks: (area) ->
+  placeBlocks: (types) ->
     layer = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
     layer.resizeWorld()
     dung = this
 
-    for o in area
+    for o in types
       count = 0
       log = []
       current = null
+      center = @randOpenTile(layer)
 
+      blob = new Blob(center,10)
+
+      ###
       # Loop for size of objects, placing tiles where they will fit
       loop
         if not current? then current = {tile: @randOpenTile(layer), dir: null}
@@ -119,3 +153,4 @@ class window.Dungeon
           if log.length > 0 then current = @randElem(log)
           else current = {tile: @randOpenTile(layer), dir: null}
         break if count >= o.num or current.tile is false
+      ###

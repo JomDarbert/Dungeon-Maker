@@ -30,32 +30,36 @@ playState =
     toBuild = []
     groundObj = 
       name: "ground"
-      num: 0.05*a
+      size: 0.05*a
       gid: 0
+      maxDist: 20
 
     wallObj =
       name: "ground"
-      num: 0.05*a
+      size: 0.05*a
       gid: 1
+      maxDist: 20
 
     waterObj =
       name: "water"
-      num: 0.15*a
+      size: 0.15*a
       gid: 2
+      maxDist: 20
 
     lavaObj =
       name: "lava"
-      num: 0.05*a
+      size: 0.05*a
       gid: 3
-
-    dung = new window.Dungeon(20,20,32,@game,@map)
+      maxDist: 20
 
     toBuild.push groundObj
     toBuild.push wallObj
     toBuild.push waterObj
     toBuild.push lavaObj
 
-    dung.placeBlocks(toBuild)
+    dung = new window.Dungeon(20,20,32,@game,@map,toBuild)
+    dung.build()
+
     return
 
   update: ->
