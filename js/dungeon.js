@@ -11,30 +11,27 @@ Node - own class
   max distance from center it is allowed to spider out to
  */
 window.Blob = (function() {
-  function Blob(center, maxDist, size, gid, map) {
-    this.center = center;
+  function Blob(dungeon, gid, maxDist, size) {
+    this.dungeon = dungeon;
+    this.gid = gid;
     this.maxDist = maxDist;
     this.size = size;
-    this.gid = gid;
-    this.map = map;
-    if (this.center == null) {
-      this.center = null;
-    }
-    if (this.maxDist == null) {
-      this.maxDist = 20;
-    }
-    if (this.current == null) {
-      this.current = this.center;
-    }
-    if (this.size == null) {
-      this.size = 20;
+    if (this.dungeon == null) {
+      this.dungeon = null;
     }
     if (this.gid == null) {
       this.gid = 0;
     }
-    if (this.map == null) {
-      this.map = null;
+    if (this.maxDist == null) {
+      this.maxDist = 20;
     }
+    if (this.size == null) {
+      this.size = 20;
+    }
+    this.layer = this.dungeon.layer;
+    this.map = this.dungeon.map;
+    this.center = this.dungeon.randOpenTile(this.layer);
+    this.current = this.center;
   }
 
   Blob.prototype.distFromStart = function() {
@@ -68,6 +65,37 @@ window.Blob = (function() {
       }
     }
     return available;
+  };
+
+  Blob.prototype.putTile = function(direction) {
+    var down, left, right, up;
+    switch (direction) {
+      case void 0:
+        return this.map.putTile(this.gid, this.current.x, this.current.y, this.layer);
+      case "up":
+        up = this.map.getTileAbove(this.map.getLayer(), this.current.x, this.current.y);
+        if (!(up == null)) {
+          return this.map.putTile(this.gid, up.x, up.y, this.layer);
+        }
+        break;
+      case "right":
+        right = this.map.getTileRight(this.map.getLayer(), this.current.x, this.current.y);
+        if (!(right == null)) {
+          return this.map.putTile(this.gid, right.x, right.y, this.layer);
+        }
+        break;
+      case "down":
+        down = this.map.getTileBelow(this.map.getLayer(), this.current.x, this.current.y);
+        if (!(down == null)) {
+          return this.map.putTile(this.gid, down.x, down.y, this.layer);
+        }
+        break;
+      case "left":
+        left = this.map.getTileLeft(this.map.getLayer(), this.current.x, this.current.y);
+        if (!(left == null)) {
+          return this.map.putTile(this.gid, left.x, left.y, this.layer);
+        }
+    }
   };
 
   return Blob;
@@ -104,21 +132,19 @@ window.Dungeon = (function() {
     if (!((this.width == null) || (this.height == null))) {
       this.numTiles = this.width * this.height;
     }
+    this.layer = this.map.create("dungeon", this.width, this.height, this.tileSize, this.tileSize);
+    this.layer.resizeWorld();
   }
 
   Dungeon.prototype.build = function() {
-    var available, b, blob, layer, _i, _len, _ref, _results;
-    layer = this.map.create("dungeon", this.width, this.height, this.tileSize, this.tileSize);
-    layer.resizeWorld();
+    var b, blob, _i, _len, _ref, _results;
     _ref = this.blobs;
     _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       b = _ref[_i];
-      blob = new Blob(this.randOpenTile(layer), b.maxDist, b.size, b.gid, this.map);
-      console.log(blob);
-      this.map.putTile(blob.gid, blob.center.x, blob.center.y, layer);
-      available = blob.getAvailable();
-      _results.push(console.log(available));
+      blob = new Blob(this, b.gid, b.maxDist, b.size);
+      blob.putTile();
+      _results.push(blob.putTile("up"));
     }
     return _results;
   };

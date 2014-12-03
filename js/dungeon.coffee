@@ -10,13 +10,15 @@ Node - own class
   max distance from center it is allowed to spider out to
 ###
 class window.Blob
-  constructor: (@center,@maxDist,@size,@gid,@map) ->
-    @center      = null    unless @center?
-    @maxDist     = 20      unless @maxDist?
-    @current     = @center unless @current?
-    @size        = 20      unless @size?
-    @gid         = 0       unless @gid?
-    @map         = null    unless @map?
+  constructor: (@dungeon,@gid,@maxDist,@size) ->
+    @dungeon     = null unless @dungeon?
+    @gid         = 0    unless @gid?
+    @maxDist     = 20   unless @maxDist?
+    @size        = 20   unless @size?
+    @layer       = @dungeon.layer
+    @map         = @dungeon.map
+    @center      = @dungeon.randOpenTile(@layer)
+    @current     = @center
 
   distFromStart: ->
     x1 = @center.x
@@ -37,6 +39,24 @@ class window.Blob
       available.push {tile: tile, dir: dir}
     return available
 
+  putTile: (direction) ->
+    switch direction
+      when undefined
+        @map.putTile(@gid,@current.x,@current.y,@layer)
+      when "up"
+        up = @map.getTileAbove(@map.getLayer(),@current.x,@current.y) 
+        @map.putTile(@gid,up.x,up.y,@layer) unless not up?
+      when "right"
+        right = @map.getTileRight(@map.getLayer(),@current.x,@current.y) 
+        @map.putTile(@gid,right.x,right.y,@layer) unless not right?
+      when "down"
+        down = @map.getTileBelow(@map.getLayer(),@current.x,@current.y)
+        @map.putTile(@gid,down.x,down.y,@layer) unless not down?
+      when "left"
+        left = @map.getTileLeft(@map.getLayer(),@current.x,@current.y) 
+        @map.putTile(@gid,left.x,left.y,@layer) unless not left?
+
+
 class window.Dungeon
   constructor: (@width,@height,@tileSize,@game,@map,@blobs,@randomness) ->
     @width      = 20    unless @width?
@@ -46,26 +66,21 @@ class window.Dungeon
     @blobs      = null  unless @blobs?
     @randomness = 5     unless @randomness?
     @numTiles   = @width*@height unless not @width? or not @height?
+    @layer      = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
+    @layer.resizeWorld()
 
   build: ->
-    layer = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
-    layer.resizeWorld()
-
     for b in @blobs
-      blob = new Blob(@randOpenTile(layer),b.maxDist,b.size,b.gid,@map)
-      console.log blob
-      @map.putTile(blob.gid,blob.center.x,blob.center.y,layer)
-      available = blob.getAvailable()
-      console.log available
-
+      blob = new Blob(this,b.gid,b.maxDist,b.size)
+      blob.putTile()
+      blob.putTile("up")
+      
   randOpenTile: (layer) ->
     open = layer.layer.data.filter (y) -> return 1 for x in y when x.index is -1
     if open.length <= 0 then return false
     return @randElem(@randElem(open))
 
   randElem: (arr) -> return arr[Math.floor(Math.random()*arr.length)]
-
-
 
   countDirs: (log,numRecent) ->
     counts = 
