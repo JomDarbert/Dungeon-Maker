@@ -23,41 +23,45 @@ playState =
     @map.addTilesetImage("water","water",32,32,null,null,2)
     @map.addTilesetImage("lava","lava",32,32,null,null,3)
 
-    w = game.width/32
-    h = game.width/32
+    t = 32
+    w = game.width/t
+    h = game.height/t
     a = w*h
 
-    toBuild = []
-    groundObj = 
+    ground = 
       name: "ground"
       size: 0.05*a
       gid: 0
       maxDist: 20
 
-    wallObj =
+    wall =
       name: "ground"
       size: 0.05*a
       gid: 1
       maxDist: 20
 
-    waterObj =
+    water =
       name: "water"
       size: 0.15*a
       gid: 2
       maxDist: 20
 
-    lavaObj =
+    lava =
       name: "lava"
       size: 0.05*a
       gid: 3
       maxDist: 20
 
-    toBuild.push groundObj
-    toBuild.push wallObj
-    toBuild.push waterObj
-    toBuild.push lavaObj
+    nodes = [ground,wall,water,lava]
 
-    dung = new window.Dungeon(20,20,32,@game,@map,toBuild)
+    options = 
+      width: w
+      height: h
+      tileSize: t
+      map: @map
+      nodes: nodes
+
+    dung = new window.Dungeon(options)
     dung.build()
 
     return

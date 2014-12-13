@@ -8,164 +8,108 @@ camera follow mouse?
 Create nodes for each resource type
 Node - own class
   max distance from center it is allowed to spider out to
+  Minimum distance between nodes
+  Fill empty space with different types of rock
+
 ###
-class window.Blob
-  constructor: (@dungeon,@gid,@maxDist,@size) ->
-    @dungeon     = null unless @dungeon?
-    @gid         = 0    unless @gid?
-    @maxDist     = 20   unless @maxDist?
-    @size        = 20   unless @size?
+class window.Node
+  constructor: (options) ->
+    throw new Error "No dungeon provided to Node constructor" unless options.dungeon?
+    @dungeon     = options.dungeon
+    @name        = options.name or undefined
+    @gid         = options.gid or 0
+    @maxDist     = options.maxDist or 20
+    @size        = options.size or 20
     @layer       = @dungeon.layer
     @map         = @dungeon.map
+    @index       = @map.getLayer()
     @center      = @dungeon.randOpenTile(@layer)
-    @current     = @center
+    @cur         = @center
 
-  distFromStart: ->
-    x1 = @center.x
-    y1 = @center.y
-    x2 = @current.x
-    y2 = @current.y
-    return Math.sqrt( (x2-=x1)*x2 + (y2-=y1)*y2 )
+  distFromCenter: ->
+    return Math.abs(@cur.x-@center.x) + Math.abs(@cur.y-@center.y)
 
   getAvailable: (tile) ->
-    tile = @current unless tile?
+    tile = @cur unless tile?
     adj = 
-      up: @map.getTileAbove(@map.getLayer(),tile.x,tile.y) 
-      right: @map.getTileRight(@map.getLayer(),tile.x,tile.y) 
-      down: @map.getTileBelow(@map.getLayer(),tile.x,tile.y) 
-      left: @map.getTileLeft(@map.getLayer(),tile.x,tile.y)
+      up: @map.getTileAbove(@index,tile.x,tile.y) 
+      right: @map.getTileRight(@index,tile.x,tile.y) 
+      down: @map.getTileBelow(@index,tile.x,tile.y) 
+      left: @map.getTileLeft(@index,tile.x,tile.y)
     available = []
     for dir,tile of adj when tile isnt null and tile.index is -1
       available.push {tile: tile, dir: dir}
     return available
 
-  putTile: (direction) ->
-    switch direction
-      when undefined
-        @map.putTile(@gid,@current.x,@current.y,@layer)
-      when "up"
-        up = @map.getTileAbove(@map.getLayer(),@current.x,@current.y) 
-        @map.putTile(@gid,up.x,up.y,@layer) unless not up?
-      when "right"
-        right = @map.getTileRight(@map.getLayer(),@current.x,@current.y) 
-        @map.putTile(@gid,right.x,right.y,@layer) unless not right?
-      when "down"
-        down = @map.getTileBelow(@map.getLayer(),@current.x,@current.y)
-        @map.putTile(@gid,down.x,down.y,@layer) unless not down?
-      when "left"
-        left = @map.getTileLeft(@map.getLayer(),@current.x,@current.y) 
-        @map.putTile(@gid,left.x,left.y,@layer) unless not left?
+  isAvailable: (dir) ->
+    throw new Error "#{dir} is not a valid direction" unless dir in ["up","right","down","left"]
+    switch dir
+      when "up"    then tile = @map.getTileAbove(@index,@cur.x,@cur.y)
+      when "right" then tile = @map.getTileRight(@index,@cur.x,@cur.y)
+      when "down"  then tile = @map.getTileBelow(@index,@cur.x,@cur.y)
+      when "left"  then tile = @map.getTileLeft(@index,@cur.x,@cur.y)
+
+    if tile is null then return null
+    if tile.index isnt -1 then return null
+    return tile
+
+  #check for out of bounds or running into another tile (maybe just check index = -1?)
+  #calculate @filled and @remaining from @size
+  #check for maxDist
+  grow: (dir) ->
+    if not dir?
+      @map.putTile(@gid,@cur.x,@cur.y,@layer)
+      return null
+
+    tile = @isAvailable(dir)
+    if tile?
+      @cur = tile
+      @map.putTile(@gid,@cur.x,@cur.y,@layer)
+      return null
+
+    else throw new Error "#{@name} cannot grow #{dir}"
+    return null
+
+
+
+
+
 
 
 class window.Dungeon
-  constructor: (@width,@height,@tileSize,@game,@map,@blobs,@randomness) ->
-    @width      = 20    unless @width?
-    @height     = 20    unless @width?
-    @tileSize   = 32    unless @tileSize?
-    @map        = null  unless @map?
-    @blobs      = null  unless @blobs?
-    @randomness = 5     unless @randomness?
+  constructor: (options) ->
+    throw new Error "No map provided to Dungeon constructor" unless options.map?
+    @map        = options.map
+    @width      = options.width or 20
+    @height     = options.height or 20
+    @tileSize   = options.tileSize or 32
+    @nodes      = options.nodes or []
+    @randomness = options.randomness or 5
     @numTiles   = @width*@height unless not @width? or not @height?
     @layer      = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
     @layer.resizeWorld()
-
-  build: ->
-    for b in @blobs
-      blob = new Blob(this,b.gid,b.maxDist,b.size)
-      blob.putTile()
-      blob.putTile("up")
       
   randOpenTile: (layer) ->
-    open = layer.layer.data.filter (y) -> return 1 for x in y when x.index is -1
+    arr = layer.layer.data
+    open = []
+    for row in arr
+      for tile in row when tile.index is -1
+        open.push tile
+
     if open.length <= 0 then return false
-    return @randElem(@randElem(open))
+    return @randElem(open)
 
   randElem: (arr) -> return arr[Math.floor(Math.random()*arr.length)]
 
-  countDirs: (log,numRecent) ->
-    counts = 
-      total:  {up: 0, right: 0, down: 0, left: 0}
-      recent: {up: 0, right: 0, down: 0, left: 0}
-      last:   null
-      sortedRecent: []
-      sortedTotal: []
+  build: ->
+    for n in @nodes
 
-    counts.last = log[log.length-1]
-    for entry,key in log when entry? and entry.dir?
-      counts.total[entry.dir]++
-      if key <= numRecent then counts.recent[entry.dir]++
+      options = dungeon: this, gid: n.gid, maxDist: n.maxDist, size: n.size, name: n.name
+      node = new Node(options)
+      node.grow()
+      node.grow("up")
+      node.grow("right")
+      node.grow("right")
+      node.grow("down")
 
-    st = []
-    sr = []
-    for x of counts.recent
-      sr.push [x,counts.recent[x]]
-
-    for y of counts.total
-      st.push [y,counts.total[y]]
-
-    counts.sortedRecent = sr.sort (a,b) -> b[1] - a[1]
-    counts.sortedTotal  = st.sort (a,b) -> b[1] - a[1]
-    return counts
-
-  placeBlocks: (types) ->
-    layer = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
-    layer.resizeWorld()
-    dung = this
-
-    for o in types
-      count = 0
-      log = []
-      current = null
-      center = @randOpenTile(layer)
-
-      blob = new Blob(center,10)
-
-      ###
-      # Loop for size of objects, placing tiles where they will fit
-      loop
-        if not current? then current = {tile: @randOpenTile(layer), dir: null}
-        @map.putTile(o.gid,current.tile.x,current.tile.y,layer)
-
-        available = @getAvail(current.tile)
-
-        # If more than one direction available, apply randomness checker
-        if available.length > 1
-          dirs = @countDirs(log,5)
-          recent = dirs.sortedRecent
-          last = dirs.last
-          priority = []
-
-          # Don't go in the same direction twice
-          if last?
-            available = available.filter (x) ->
-              if x.dir isnt last.dir then return 1
-
-          # Prioritize least traveled directions
-          for tile in available 
-            console.log tile.dir
-            if tile.dir is recent[3][0] or tile.dir is recent[2][0]
-              if last? and tile.dir isnt last.dir
-                priority.push tile
-
-          log.push current
-          if last? then console.log "last: "+last.dir
-
-          if priority.length > 0 then current = @randElem(priority)
-          else current = @randElem(available)
-          console.log "current: "+current.dir
-          console.log "-----"
-          count++
-
-        # Otherwise, go in the only available direction
-        if available.length > 0
-          log.push current
-          current = @randElem(available)
-          count++
-
-        # Otherwise no current paths are available to travel, so pick another spot to check in log
-        else
-          log = log.filter (b) -> if dung.getAvail(b.tile).length > 0 then return 1
-          if log.length > 0 then current = @randElem(log)
-          else current = {tile: @randOpenTile(layer), dir: null}
-        break if count >= o.num or current.tile is false
-      ###
+    return null

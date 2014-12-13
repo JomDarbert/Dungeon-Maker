@@ -10,7 +10,7 @@ playState = {
     return this.map = game.add.tilemap();
   },
   create: function() {
-    var a, dung, groundObj, h, lavaObj, toBuild, w, wallObj, waterObj;
+    var a, dung, ground, h, lava, nodes, options, t, w, wall, water;
     game.stage.backgroundColor = "#3498db";
 
     /*
@@ -26,39 +26,43 @@ playState = {
     this.map.addTilesetImage("wall", "wall", 32, 32, null, null, 1);
     this.map.addTilesetImage("water", "water", 32, 32, null, null, 2);
     this.map.addTilesetImage("lava", "lava", 32, 32, null, null, 3);
-    w = game.width / 32;
-    h = game.width / 32;
+    t = 32;
+    w = game.width / t;
+    h = game.height / t;
     a = w * h;
-    toBuild = [];
-    groundObj = {
+    ground = {
       name: "ground",
       size: 0.05 * a,
       gid: 0,
       maxDist: 20
     };
-    wallObj = {
+    wall = {
       name: "ground",
       size: 0.05 * a,
       gid: 1,
       maxDist: 20
     };
-    waterObj = {
+    water = {
       name: "water",
       size: 0.15 * a,
       gid: 2,
       maxDist: 20
     };
-    lavaObj = {
+    lava = {
       name: "lava",
       size: 0.05 * a,
       gid: 3,
       maxDist: 20
     };
-    toBuild.push(groundObj);
-    toBuild.push(wallObj);
-    toBuild.push(waterObj);
-    toBuild.push(lavaObj);
-    dung = new window.Dungeon(20, 20, 32, this.game, this.map, toBuild);
+    nodes = [ground, wall, water, lava];
+    options = {
+      width: w,
+      height: h,
+      tileSize: t,
+      map: this.map,
+      nodes: nodes
+    };
+    dung = new window.Dungeon(options);
     dung.build();
   },
   update: function() {},

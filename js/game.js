@@ -1,10 +1,6 @@
-var game, winH, winW;
+var game;
 
-winW = window.innerWidth;
-
-winH = window.innerHeight;
-
-game = new Phaser.Game(800, 600, Phaser.AUTO, "game");
+game = new Phaser.Game(300, 150, Phaser.AUTO, "game");
 
 game.state.add("play", playState);
 
