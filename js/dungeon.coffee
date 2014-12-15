@@ -21,7 +21,7 @@ class window.Node
     @layer       = @dungeon.layer
     @map         = @dungeon.map
     @index       = @map.getLayer()
-    @center      = @dungeon.randOpenTile(@layer)
+    @center      = @dungeon.randOpenTile()
     @cur         = @center
 
   distFromCenter: (tile) ->
@@ -43,6 +43,14 @@ class window.Node
     return available unless available.length is 0
     return null
 
+  findBranch: ->
+    i = 0
+    @map.forEach( ->
+      console.log ++i
+    ,this,0,0,5,5,@layer)
+    arr = @layer.layer.data
+
+
   grow: (tile) ->
     if not tile?
       @map.putTile(@gid,@cur.x,@cur.y,@layer)
@@ -51,6 +59,7 @@ class window.Node
     @cur = tile
     @map.putTile(@gid,@cur.x,@cur.y,@layer)
     return null
+
 
 
 
@@ -71,8 +80,8 @@ class window.Dungeon
     @layer      = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
     @layer.resizeWorld()
       
-  randOpenTile: (layer) ->
-    arr = layer.layer.data
+  randOpenTile: ->
+    arr = @layer.layer.data
     open = []
     for row in arr
       for tile in row when tile.index is -1
@@ -89,6 +98,7 @@ class window.Dungeon
       node = new Node(options)
       node.grow()
       i = 0
+      node.findBranch()
       loop
         # Handle when nowhere available - find another spot to grow from
         avail = node.getAvailable()

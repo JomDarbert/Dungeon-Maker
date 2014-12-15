@@ -24,7 +24,7 @@ window.Node = (function() {
     this.layer = this.dungeon.layer;
     this.map = this.dungeon.map;
     this.index = this.map.getLayer();
-    this.center = this.dungeon.randOpenTile(this.layer);
+    this.center = this.dungeon.randOpenTile();
     this.cur = this.center;
   }
 
@@ -62,6 +62,15 @@ window.Node = (function() {
     return null;
   };
 
+  Node.prototype.findBranch = function() {
+    var arr, i;
+    i = 0;
+    this.map.forEach(function() {
+      return console.log(++i);
+    }, this, 0, 0, 5, 5, this.layer);
+    return arr = this.layer.layer.data;
+  };
+
   Node.prototype.grow = function(tile) {
     if (tile == null) {
       this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
@@ -94,9 +103,9 @@ window.Dungeon = (function() {
     this.layer.resizeWorld();
   }
 
-  Dungeon.prototype.randOpenTile = function(layer) {
+  Dungeon.prototype.randOpenTile = function() {
     var arr, open, row, tile, _i, _j, _len, _len1;
-    arr = layer.layer.data;
+    arr = this.layer.layer.data;
     open = [];
     for (_i = 0, _len = arr.length; _i < _len; _i++) {
       row = arr[_i];
@@ -132,6 +141,7 @@ window.Dungeon = (function() {
       node = new Node(options);
       node.grow();
       i = 0;
+      node.findBranch();
       while (true) {
         avail = node.getAvailable();
         if (!(avail == null)) {
