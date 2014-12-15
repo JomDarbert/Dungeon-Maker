@@ -1,6 +1,12 @@
-var game;
+var game, h, t, w;
 
-game = new Phaser.Game(300, 150, Phaser.AUTO, "game");
+t = 32;
+
+w = t * 10;
+
+h = t * 10;
+
+game = new Phaser.Game(w, h, Phaser.AUTO, "game");
 
 game.state.add("play", playState);
 

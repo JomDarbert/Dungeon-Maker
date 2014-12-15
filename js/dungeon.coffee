@@ -7,10 +7,8 @@ camera follow mouse?
 
 Create nodes for each resource type
 Node - own class
-  max distance from center it is allowed to spider out to
   Minimum distance between nodes
   Fill empty space with different types of rock
-
 ###
 class window.Node
   constructor: (options) ->
@@ -26,10 +24,13 @@ class window.Node
     @center      = @dungeon.randOpenTile(@layer)
     @cur         = @center
 
-  distFromCenter: ->
-    return Math.abs(@cur.x-@center.x) + Math.abs(@cur.y-@center.y)
+  distFromCenter: (tile) ->
+    tile = @cur unless tile?
+    return Math.abs(tile.x-@center.x) + Math.abs(tile.y-@center.y)
 
   getAvailable: (tile) ->
+    # Calculate @filled and @remaining from @size
+    # Handle running into walls?
     tile = @cur unless tile?
     adj = 
       up: @map.getTileAbove(@index,tile.x,tile.y) 
@@ -37,37 +38,18 @@ class window.Node
       down: @map.getTileBelow(@index,tile.x,tile.y) 
       left: @map.getTileLeft(@index,tile.x,tile.y)
     available = []
-    for dir,tile of adj when tile isnt null and tile.index is -1
+    for dir,tile of adj when tile isnt null and tile.index is -1 and @distFromCenter(tile) <= @maxDist
       available.push {tile: tile, dir: dir}
-    return available
+    return available unless available.length is 0
+    return null
 
-  isAvailable: (dir) ->
-    throw new Error "#{dir} is not a valid direction" unless dir in ["up","right","down","left"]
-    switch dir
-      when "up"    then tile = @map.getTileAbove(@index,@cur.x,@cur.y)
-      when "right" then tile = @map.getTileRight(@index,@cur.x,@cur.y)
-      when "down"  then tile = @map.getTileBelow(@index,@cur.x,@cur.y)
-      when "left"  then tile = @map.getTileLeft(@index,@cur.x,@cur.y)
-
-    if tile is null then return null
-    if tile.index isnt -1 then return null
-    return tile
-
-  #check for out of bounds or running into another tile (maybe just check index = -1?)
-  #calculate @filled and @remaining from @size
-  #check for maxDist
-  grow: (dir) ->
-    if not dir?
+  grow: (tile) ->
+    if not tile?
       @map.putTile(@gid,@cur.x,@cur.y,@layer)
       return null
 
-    tile = @isAvailable(dir)
-    if tile?
-      @cur = tile
-      @map.putTile(@gid,@cur.x,@cur.y,@layer)
-      return null
-
-    else throw new Error "#{@name} cannot grow #{dir}"
+    @cur = tile
+    @map.putTile(@gid,@cur.x,@cur.y,@layer)
     return null
 
 
@@ -103,13 +85,18 @@ class window.Dungeon
 
   build: ->
     for n in @nodes
-
       options = dungeon: this, gid: n.gid, maxDist: n.maxDist, size: n.size, name: n.name
       node = new Node(options)
       node.grow()
-      node.grow("up")
-      node.grow("right")
-      node.grow("right")
-      node.grow("down")
+      i = 0
+      loop
+        # Handle when nowhere available - find another spot to grow from
+        avail = node.getAvailable()
+        # If nothing available
+        goTo = @randElem avail unless not avail?
+        node.grow(goTo.tile)
+        # If grow is false
+        i++
+        break if i >= 20 or not avail?
 
     return null

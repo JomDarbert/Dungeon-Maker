@@ -8,7 +8,6 @@ camera follow mouse?
 
 Create nodes for each resource type
 Node - own class
-  max distance from center it is allowed to spider out to
   Minimum distance between nodes
   Fill empty space with different types of rock
  */
@@ -29,8 +28,11 @@ window.Node = (function() {
     this.cur = this.center;
   }
 
-  Node.prototype.distFromCenter = function() {
-    return Math.abs(this.cur.x - this.center.x) + Math.abs(this.cur.y - this.center.y);
+  Node.prototype.distFromCenter = function(tile) {
+    if (tile == null) {
+      tile = this.cur;
+    }
+    return Math.abs(tile.x - this.center.x) + Math.abs(tile.y - this.center.y);
   };
 
   Node.prototype.getAvailable = function(tile) {
@@ -47,57 +49,26 @@ window.Node = (function() {
     available = [];
     for (dir in adj) {
       tile = adj[dir];
-      if (tile !== null && tile.index === -1) {
+      if (tile !== null && tile.index === -1 && this.distFromCenter(tile) <= this.maxDist) {
         available.push({
           tile: tile,
           dir: dir
         });
       }
     }
-    return available;
+    if (available.length !== 0) {
+      return available;
+    }
+    return null;
   };
 
-  Node.prototype.isAvailable = function(dir) {
-    var tile;
-    if (dir !== "up" && dir !== "right" && dir !== "down" && dir !== "left") {
-      throw new Error("" + dir + " is not a valid direction");
-    }
-    switch (dir) {
-      case "up":
-        tile = this.map.getTileAbove(this.index, this.cur.x, this.cur.y);
-        break;
-      case "right":
-        tile = this.map.getTileRight(this.index, this.cur.x, this.cur.y);
-        break;
-      case "down":
-        tile = this.map.getTileBelow(this.index, this.cur.x, this.cur.y);
-        break;
-      case "left":
-        tile = this.map.getTileLeft(this.index, this.cur.x, this.cur.y);
-    }
-    if (tile === null) {
-      return null;
-    }
-    if (tile.index !== -1) {
-      return null;
-    }
-    return tile;
-  };
-
-  Node.prototype.grow = function(dir) {
-    var tile;
-    if (dir == null) {
+  Node.prototype.grow = function(tile) {
+    if (tile == null) {
       this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
       return null;
     }
-    tile = this.isAvailable(dir);
-    if (tile != null) {
-      this.cur = tile;
-      this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
-      return null;
-    } else {
-      throw new Error("" + this.name + " cannot grow " + dir);
-    }
+    this.cur = tile;
+    this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
     return null;
   };
 
@@ -147,7 +118,7 @@ window.Dungeon = (function() {
   };
 
   Dungeon.prototype.build = function() {
-    var n, node, options, _i, _len, _ref;
+    var avail, goTo, i, n, node, options, _i, _len, _ref;
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
@@ -160,10 +131,18 @@ window.Dungeon = (function() {
       };
       node = new Node(options);
       node.grow();
-      node.grow("up");
-      node.grow("right");
-      node.grow("right");
-      node.grow("down");
+      i = 0;
+      while (true) {
+        avail = node.getAvailable();
+        if (!(avail == null)) {
+          goTo = this.randElem(avail);
+        }
+        node.grow(goTo.tile);
+        i++;
+        if (i >= 20 || (avail == null)) {
+          break;
+        }
+      }
     }
     return null;
   };
