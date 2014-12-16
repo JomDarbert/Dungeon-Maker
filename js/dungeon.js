@@ -6,11 +6,15 @@ Button for testing
 resize game?
 camera follow mouse?
 
-Create nodes for each resource type
-Node - own class
+Node
   Minimum distance between nodes
-  Fill empty space with different types of rock
+
+Fill empty space with different types of rock
  */
+window.randElem = function(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+};
+
 window.Node = (function() {
   function Node(options) {
     if (options.dungeon == null) {
@@ -26,6 +30,7 @@ window.Node = (function() {
     this.index = this.map.getLayer();
     this.center = this.dungeon.randOpenTile();
     this.cur = this.center;
+    this.placedTiles = [];
   }
 
   Node.prototype.distFromCenter = function(tile) {
@@ -63,21 +68,36 @@ window.Node = (function() {
   };
 
   Node.prototype.findBranch = function() {
-    var arr, i;
-    i = 0;
-    this.map.forEach(function() {
-      return console.log(++i);
-    }, this, 0, 0, 5, 5, this.layer);
-    return arr = this.layer.layer.data;
+    var hasOpenPath, tile, _i, _len, _ref;
+    hasOpenPath = [];
+    _ref = this.placedTiles;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      tile = _ref[_i];
+      if (this.getAvailable(tile) != null) {
+        hasOpenPath.push(tile);
+      }
+    }
+    if (hasOpenPath.length > 0) {
+      this.cur = randElem(hasOpenPath);
+      return this.cur;
+    } else {
+      return null;
+    }
+  };
+
+  Node.prototype.fillHoles = function() {
+    return null;
   };
 
   Node.prototype.grow = function(tile) {
     if (tile == null) {
       this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
+      this.placedTiles.push(this.cur);
       return null;
     }
     this.cur = tile;
     this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
+    this.placedTiles.push(this.cur);
     return null;
   };
 
@@ -117,17 +137,13 @@ window.Dungeon = (function() {
       }
     }
     if (open.length <= 0) {
-      return false;
+      return null;
     }
-    return this.randElem(open);
-  };
-
-  Dungeon.prototype.randElem = function(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
+    return randElem(open);
   };
 
   Dungeon.prototype.build = function() {
-    var avail, goTo, i, n, node, options, _i, _len, _ref;
+    var dirs, goTo, i, n, node, options, _i, _len, _ref;
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
@@ -141,16 +157,19 @@ window.Dungeon = (function() {
       node = new Node(options);
       node.grow();
       i = 0;
-      node.findBranch();
       while (true) {
-        avail = node.getAvailable();
-        if (!(avail == null)) {
-          goTo = this.randElem(avail);
-        }
-        node.grow(goTo.tile);
-        i++;
-        if (i >= 20 || (avail == null)) {
+        if ((this.randOpenTile() == null) || i >= 19) {
           break;
+        }
+        if (node.findBranch() != null) {
+          dirs = node.getAvailable();
+          goTo = randElem(dirs);
+          node.grow(goTo.tile);
+          i++;
+        } else {
+          node.maxDist = Math.max(this.width, this.height);
+          node.grow(this.randOpenTile());
+          i++;
         }
       }
     }

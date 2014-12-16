@@ -5,11 +5,13 @@ Button for testing
 resize game?
 camera follow mouse?
 
-Create nodes for each resource type
-Node - own class
+Node
   Minimum distance between nodes
-  Fill empty space with different types of rock
+
+Fill empty space with different types of rock
 ###
+window.randElem = (arr) -> return arr[Math.floor(Math.random()*arr.length)]
+
 class window.Node
   constructor: (options) ->
     throw new Error "No dungeon provided to Node constructor" unless options.dungeon?
@@ -23,6 +25,7 @@ class window.Node
     @index       = @map.getLayer()
     @center      = @dungeon.randOpenTile()
     @cur         = @center
+    @placedTiles = []
 
   distFromCenter: (tile) ->
     tile = @cur unless tile?
@@ -44,20 +47,28 @@ class window.Node
     return null
 
   findBranch: ->
-    i = 0
-    @map.forEach( ->
-      console.log ++i
-    ,this,0,0,5,5,@layer)
-    arr = @layer.layer.data
+    hasOpenPath = []
+    for tile in @placedTiles when @getAvailable(tile)?
+      hasOpenPath.push tile
 
+    if hasOpenPath.length > 0
+      @cur = randElem hasOpenPath
+      return @cur
+
+    else return null
+
+  fillHoles: ->
+    return null
 
   grow: (tile) ->
     if not tile?
       @map.putTile(@gid,@cur.x,@cur.y,@layer)
+      @placedTiles.push @cur
       return null
 
     @cur = tile
     @map.putTile(@gid,@cur.x,@cur.y,@layer)
+    @placedTiles.push @cur
     return null
 
 
@@ -87,10 +98,8 @@ class window.Dungeon
       for tile in row when tile.index is -1
         open.push tile
 
-    if open.length <= 0 then return false
-    return @randElem(open)
-
-  randElem: (arr) -> return arr[Math.floor(Math.random()*arr.length)]
+    if open.length <= 0 then return null
+    return randElem(open)
 
   build: ->
     for n in @nodes
@@ -98,15 +107,17 @@ class window.Dungeon
       node = new Node(options)
       node.grow()
       i = 0
-      node.findBranch()
       loop
-        # Handle when nowhere available - find another spot to grow from
-        avail = node.getAvailable()
-        # If nothing available
-        goTo = @randElem avail unless not avail?
-        node.grow(goTo.tile)
-        # If grow is false
-        i++
-        break if i >= 20 or not avail?
+        break if not @randOpenTile()? or i >= 19
+
+        if node.findBranch()?
+          dirs = node.getAvailable()
+          goTo = randElem dirs
+          node.grow goTo.tile
+          i++
+        else
+          node.maxDist = Math.max @width, @height
+          node.grow @randOpenTile()
+          i++
 
     return null
