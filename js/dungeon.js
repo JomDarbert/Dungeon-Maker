@@ -40,18 +40,17 @@ window.Node = (function() {
     return Math.abs(tile.x - this.center.x) + Math.abs(tile.y - this.center.y);
   };
 
-  Node.prototype.distFromNodes = function() {
-    var cx, cy, tile, _i, _len, _ref, _results;
-    cx = [];
-    cy = [];
-    _ref = this.placedTiles;
-    _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      tile = _ref[_i];
-      cx.push(tile.x);
-      _results.push(cy.push(tile.y));
+  Node.prototype.getAdjacent = function(tile) {
+    var adj;
+    if (tile == null) {
+      tile = this.cur;
     }
-    return _results;
+    return adj = {
+      up: this.map.getTileAbove(this.index, tile.x, tile.y),
+      right: this.map.getTileRight(this.index, tile.x, tile.y),
+      down: this.map.getTileBelow(this.index, tile.x, tile.y),
+      left: this.map.getTileLeft(this.index, tile.x, tile.y)
+    };
   };
 
   Node.prototype.getAvailable = function(tile) {
@@ -59,12 +58,7 @@ window.Node = (function() {
     if (tile == null) {
       tile = this.cur;
     }
-    adj = {
-      up: this.map.getTileAbove(this.index, tile.x, tile.y),
-      right: this.map.getTileRight(this.index, tile.x, tile.y),
-      down: this.map.getTileBelow(this.index, tile.x, tile.y),
-      left: this.map.getTileLeft(this.index, tile.x, tile.y)
-    };
+    adj = this.getAdjacent(tile);
     available = [];
     for (dir in adj) {
       tile = adj[dir];
@@ -99,7 +93,31 @@ window.Node = (function() {
     }
   };
 
-  Node.prototype.fillHoles = function() {
+  Node.prototype.findHoles = function() {
+    var holes;
+    holes = [];
+    this.map.forEach(function(tile) {
+      var adj, fill;
+      if (tile.index === -1) {
+        fill = true;
+        adj = this.getAdjacent(tile);
+        if ((adj.up != null) && adj.up.index === -1) {
+          fill = false;
+        } else if ((adj.right != null) && adj.right.index === -1) {
+          fill = false;
+        } else if ((adj.down != null) && adj.down.index === -1) {
+          fill = false;
+        } else if ((adj.left != null) && adj.left.index === -1) {
+          fill = false;
+        }
+        if (fill === true) {
+          return holes.push(tile);
+        }
+      }
+    }, this, 0, 0, this.dungeon.width, this.dungeon.height, this.layer);
+    if (holes.length !== 0) {
+      return holes;
+    }
     return null;
   };
 
@@ -127,6 +145,7 @@ window.Dungeon = (function() {
     this.map = options.map;
     this.width = options.width || 20;
     this.height = options.height || 20;
+    this.maxDimen = Math.max(this.width, this.height);
     this.tileSize = options.tileSize || 32;
     this.nodes = options.nodes || [];
     this.randomness = options.randomness || 5;
@@ -157,7 +176,7 @@ window.Dungeon = (function() {
   };
 
   Dungeon.prototype.build = function() {
-    var goTo, i, n, node, options, _i, _len, _ref;
+    var getRand, goTo, holes, i, n, node, options, tile, _i, _j, _len, _len1, _ref;
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
@@ -180,12 +199,28 @@ window.Dungeon = (function() {
           node.grow(goTo.tile);
           i++;
         } else {
-          node.maxRadius = Math.max(this.width, this.height);
-          node.grow(this.randOpenTile());
-          i++;
+          while (true) {
+            node.maxRadius++;
+            if (node.maxRadius >= this.maxDimen) {
+              getRand = true;
+            }
+            if ((node.findBranch() != null) || getRand === true) {
+              break;
+            }
+          }
+          if (getRand === true) {
+            node.grow(this.randOpenTile());
+            i++;
+          }
+        }
+        holes = node.findHoles();
+        if (holes != null) {
+          for (_j = 0, _len1 = holes.length; _j < _len1; _j++) {
+            tile = holes[_j];
+            node.grow(tile);
+          }
         }
       }
-      node.distFromNodes();
     }
     return null;
   };

@@ -32,27 +32,27 @@ playState = {
     a = w * h;
     ground = {
       name: "ground",
-      size: 5,
+      size: 13,
       gid: 0,
-      maxDist: 7
+      maxRadius: 2
     };
     wall = {
       name: "ground",
-      size: 5,
+      size: 13,
       gid: 1,
-      maxDist: 7
+      maxRadius: 2
     };
     water = {
       name: "water",
-      size: 5,
+      size: 13,
       gid: 2,
-      maxDist: 7
+      maxRadius: 2
     };
     lava = {
       name: "lava",
-      size: 5,
+      size: 13,
       gid: 3,
-      maxDist: 7
+      maxRadius: 2
     };
     nodes = [ground, wall, water, lava];
     options = {

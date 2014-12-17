@@ -2,9 +2,9 @@ var game, h, t, w;
 
 t = 32;
 
-w = t * 10;
+w = t * 8;
 
-h = t * 10;
+h = t * 8;
 
 game = new Phaser.Game(w, h, Phaser.AUTO, "game");
 

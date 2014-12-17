@@ -31,25 +31,17 @@ class window.Node
     tile = @cur unless tile?
     return Math.abs(tile.x-@center.x) + Math.abs(tile.y-@center.y)
 
-  distFromNodes: ->
-    cx = []
-    cy = []
-    for tile in @placedTiles
-      cx.push tile.x
-      cy.push tile.y
-    # PICK UP HERE
-
-
-
-  getAvailable: (tile) ->
-    # Calculate @filled and @remaining from @size
-    # Handle running into walls?
+  getAdjacent: (tile) ->
     tile = @cur unless tile?
-    adj = 
+    return adj = 
       up: @map.getTileAbove(@index,tile.x,tile.y) 
       right: @map.getTileRight(@index,tile.x,tile.y) 
       down: @map.getTileBelow(@index,tile.x,tile.y) 
       left: @map.getTileLeft(@index,tile.x,tile.y)
+
+  getAvailable: (tile) ->
+    tile = @cur unless tile?
+    adj = @getAdjacent(tile)
     available = []
     for dir,tile of adj when tile isnt null and tile.index is -1 and @distFromCenter(tile) <= @maxRadius
       available.push {tile: tile, dir: dir}
@@ -67,7 +59,19 @@ class window.Node
 
     else return null
 
-  fillHoles: ->
+  findHoles: ->
+    holes = []
+    @map.forEach( (tile) ->
+      if tile.index is -1
+        fill = true
+        adj = @getAdjacent(tile)
+        if      adj.up?    and adj.up.index    is -1 then fill = false
+        else if adj.right? and adj.right.index is -1 then fill = false
+        else if adj.down?  and adj.down.index  is -1 then fill = false
+        else if adj.left?  and adj.left.index  is -1 then fill = false
+        if fill is true then holes.push tile
+    ,this,0,0,@dungeon.width,@dungeon.height,@layer)
+    return holes unless holes.length is 0
     return null
 
   grow: (tile) ->
@@ -94,6 +98,7 @@ class window.Dungeon
     @map        = options.map
     @width      = options.width or 20
     @height     = options.height or 20
+    @maxDimen   = Math.max @width,@height
     @tileSize   = options.tileSize or 32
     @nodes      = options.nodes or []
     @randomness = options.randomness or 5
@@ -125,9 +130,16 @@ class window.Dungeon
           node.grow goTo.tile
           i++
         else
-          node.maxRadius = Math.max @width, @height
-          node.grow @randOpenTile()
-          i++
+          loop
+            node.maxRadius++
+            if node.maxRadius >= @maxDimen then getRand = true
+            break if node.findBranch()? or getRand is true
+          if getRand is true
+            node.grow @randOpenTile()
+            i++
 
-      node.distFromNodes()
+        holes = node.findHoles()
+        if holes? then for tile in holes
+          node.grow(tile)
+          
     return null
