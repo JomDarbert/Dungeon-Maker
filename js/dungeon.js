@@ -7,7 +7,7 @@ resize game?
 camera follow mouse?
 
 Node
-  Minimum distance between nodes
+  Minimum distance between nodes (place a flag on -1 tiles around nodes that prevents being built on)
 
 Fill empty space with different types of rock
  */
