@@ -18,7 +18,7 @@ class window.Node
     @dungeon     = options.dungeon
     @name        = options.name or undefined
     @gid         = options.gid or 0
-    @maxDist     = options.maxDist or 20
+    @maxRadius   = options.maxRadius or 20
     @size        = options.size or 20
     @layer       = @dungeon.layer
     @map         = @dungeon.map
@@ -31,6 +31,16 @@ class window.Node
     tile = @cur unless tile?
     return Math.abs(tile.x-@center.x) + Math.abs(tile.y-@center.y)
 
+  distFromNodes: ->
+    cx = []
+    cy = []
+    for tile in @placedTiles
+      cx.push tile.x
+      cy.push tile.y
+    # PICK UP HERE
+
+
+
   getAvailable: (tile) ->
     # Calculate @filled and @remaining from @size
     # Handle running into walls?
@@ -41,7 +51,7 @@ class window.Node
       down: @map.getTileBelow(@index,tile.x,tile.y) 
       left: @map.getTileLeft(@index,tile.x,tile.y)
     available = []
-    for dir,tile of adj when tile isnt null and tile.index is -1 and @distFromCenter(tile) <= @maxDist
+    for dir,tile of adj when tile isnt null and tile.index is -1 and @distFromCenter(tile) <= @maxRadius
       available.push {tile: tile, dir: dir}
     return available unless available.length is 0
     return null
@@ -103,21 +113,21 @@ class window.Dungeon
 
   build: ->
     for n in @nodes
-      options = dungeon: this, gid: n.gid, maxDist: n.maxDist, size: n.size, name: n.name
+      options = dungeon: this, gid: n.gid, maxRadius: n.maxRadius, size: n.size, name: n.name
       node = new Node(options)
       node.grow()
-      i = 0
+      i = 1
       loop
-        break if not @randOpenTile()? or i >= 19
+        break if not @randOpenTile()? or i >= node.size
 
         if node.findBranch()?
-          dirs = node.getAvailable()
-          goTo = randElem dirs
+          goTo = randElem node.getAvailable()
           node.grow goTo.tile
           i++
         else
-          node.maxDist = Math.max @width, @height
+          node.maxRadius = Math.max @width, @height
           node.grow @randOpenTile()
           i++
 
+      node.distFromNodes()
     return null

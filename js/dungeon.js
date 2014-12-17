@@ -23,7 +23,7 @@ window.Node = (function() {
     this.dungeon = options.dungeon;
     this.name = options.name || void 0;
     this.gid = options.gid || 0;
-    this.maxDist = options.maxDist || 20;
+    this.maxRadius = options.maxRadius || 20;
     this.size = options.size || 20;
     this.layer = this.dungeon.layer;
     this.map = this.dungeon.map;
@@ -40,6 +40,20 @@ window.Node = (function() {
     return Math.abs(tile.x - this.center.x) + Math.abs(tile.y - this.center.y);
   };
 
+  Node.prototype.distFromNodes = function() {
+    var cx, cy, tile, _i, _len, _ref, _results;
+    cx = [];
+    cy = [];
+    _ref = this.placedTiles;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      tile = _ref[_i];
+      cx.push(tile.x);
+      _results.push(cy.push(tile.y));
+    }
+    return _results;
+  };
+
   Node.prototype.getAvailable = function(tile) {
     var adj, available, dir;
     if (tile == null) {
@@ -54,7 +68,7 @@ window.Node = (function() {
     available = [];
     for (dir in adj) {
       tile = adj[dir];
-      if (tile !== null && tile.index === -1 && this.distFromCenter(tile) <= this.maxDist) {
+      if (tile !== null && tile.index === -1 && this.distFromCenter(tile) <= this.maxRadius) {
         available.push({
           tile: tile,
           dir: dir
@@ -143,35 +157,35 @@ window.Dungeon = (function() {
   };
 
   Dungeon.prototype.build = function() {
-    var dirs, goTo, i, n, node, options, _i, _len, _ref;
+    var goTo, i, n, node, options, _i, _len, _ref;
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
       options = {
         dungeon: this,
         gid: n.gid,
-        maxDist: n.maxDist,
+        maxRadius: n.maxRadius,
         size: n.size,
         name: n.name
       };
       node = new Node(options);
       node.grow();
-      i = 0;
+      i = 1;
       while (true) {
-        if ((this.randOpenTile() == null) || i >= 19) {
+        if ((this.randOpenTile() == null) || i >= node.size) {
           break;
         }
         if (node.findBranch() != null) {
-          dirs = node.getAvailable();
-          goTo = randElem(dirs);
+          goTo = randElem(node.getAvailable());
           node.grow(goTo.tile);
           i++;
         } else {
-          node.maxDist = Math.max(this.width, this.height);
+          node.maxRadius = Math.max(this.width, this.height);
           node.grow(this.randOpenTile());
           i++;
         }
       }
+      node.distFromNodes();
     }
     return null;
   };

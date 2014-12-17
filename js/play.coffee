@@ -30,25 +30,25 @@ playState =
 
     ground = 
       name: "ground"
-      size: 0.05*a
+      size: 5
       gid: 0
       maxDist: 7
 
     wall =
       name: "ground"
-      size: 0.05*a
+      size: 5
       gid: 1
       maxDist: 7
 
     water =
       name: "water"
-      size: 0.15*a
+      size: 5
       gid: 2
       maxDist: 7
 
     lava =
       name: "lava"
-      size: 0.05*a
+      size: 5
       gid: 3
       maxDist: 7
 
