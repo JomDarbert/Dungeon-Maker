@@ -176,7 +176,7 @@ window.Dungeon = (function() {
   };
 
   Dungeon.prototype.build = function() {
-    var getRand, goTo, holes, i, n, node, options, tile, _i, _j, _len, _len1, _ref;
+    var goTo, holes, i, n, node, options, tile, _i, _j, _len, _len1, _ref;
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
@@ -201,14 +201,11 @@ window.Dungeon = (function() {
         } else {
           while (true) {
             node.maxRadius++;
-            if (node.maxRadius >= this.maxDimen) {
-              getRand = true;
-            }
-            if ((node.findBranch() != null) || getRand === true) {
+            if ((node.findBranch() != null) || node.maxRadius >= this.maxDimen) {
               break;
             }
           }
-          if (getRand === true) {
+          if (node.maxRadius >= this.maxDimen) {
             node.grow(this.randOpenTile());
             i++;
           }

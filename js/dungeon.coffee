@@ -132,9 +132,8 @@ class window.Dungeon
         else
           loop
             node.maxRadius++
-            if node.maxRadius >= @maxDimen then getRand = true
-            break if node.findBranch()? or getRand is true
-          if getRand is true
+            break if node.findBranch()? or node.maxRadius >= @maxDimen
+          if node.maxRadius >= @maxDimen
             node.grow @randOpenTile()
             i++
 
