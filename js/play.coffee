@@ -33,24 +33,28 @@ playState =
       size: 13
       gid: 0
       maxRadius: 2
+      fillHoles: true
 
     wall =
       name: "ground"
       size: 13
       gid: 1
       maxRadius: 2
+      fillHoles: true
 
     water =
       name: "water"
       size: 13
       gid: 2
       maxRadius: 2
+      fillHoles: true
 
     lava =
       name: "lava"
       size: 13
       gid: 3
       maxRadius: 2
+      fillHoles: true
 
     nodes = [ground,wall,water,lava]
 

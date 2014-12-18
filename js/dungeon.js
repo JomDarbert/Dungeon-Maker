@@ -8,6 +8,7 @@ camera follow mouse?
 
 Node
   Minimum distance between nodes (place a flag on -1 tiles around nodes that prevents being built on)
+  make hole filling an option
 
 Fill empty space with different types of rock
  */
@@ -20,11 +21,15 @@ window.Node = (function() {
     if (options.dungeon == null) {
       throw new Error("No dungeon provided to Node constructor");
     }
+    if (options.fillHoles == null) {
+      options.fillHoles = true;
+    }
     this.dungeon = options.dungeon;
     this.name = options.name || void 0;
     this.gid = options.gid || 0;
     this.maxRadius = options.maxRadius || 20;
     this.size = options.size || 20;
+    this.fillHoles = options.fillHoles;
     this.layer = this.dungeon.layer;
     this.map = this.dungeon.map;
     this.index = this.map.getLayer();
@@ -185,7 +190,8 @@ window.Dungeon = (function() {
         gid: n.gid,
         maxRadius: n.maxRadius,
         size: n.size,
-        name: n.name
+        name: n.name,
+        fillHoles: n.fillHoles
       };
       node = new Node(options);
       node.grow();
@@ -210,11 +216,13 @@ window.Dungeon = (function() {
             i++;
           }
         }
-        holes = node.findHoles();
-        if (holes != null) {
-          for (_j = 0, _len1 = holes.length; _j < _len1; _j++) {
-            tile = holes[_j];
-            node.grow(tile);
+        if (node.fillHoles === true) {
+          holes = node.findHoles();
+          if (holes != null) {
+            for (_j = 0, _len1 = holes.length; _j < _len1; _j++) {
+              tile = holes[_j];
+              node.grow(tile);
+            }
           }
         }
       }

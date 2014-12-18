@@ -7,6 +7,7 @@ camera follow mouse?
 
 Node
   Minimum distance between nodes (place a flag on -1 tiles around nodes that prevents being built on)
+  make hole filling an option
 
 Fill empty space with different types of rock
 ###
@@ -15,11 +16,13 @@ window.randElem = (arr) -> return arr[Math.floor(Math.random()*arr.length)]
 class window.Node
   constructor: (options) ->
     throw new Error "No dungeon provided to Node constructor" unless options.dungeon?
+    options.fillHoles = true unless options.fillHoles?
     @dungeon     = options.dungeon
     @name        = options.name or undefined
     @gid         = options.gid or 0
     @maxRadius   = options.maxRadius or 20
     @size        = options.size or 20
+    @fillHoles   = options.fillHoles
     @layer       = @dungeon.layer
     @map         = @dungeon.map
     @index       = @map.getLayer()
@@ -118,7 +121,7 @@ class window.Dungeon
 
   build: ->
     for n in @nodes
-      options = dungeon: this, gid: n.gid, maxRadius: n.maxRadius, size: n.size, name: n.name
+      options = dungeon: this, gid: n.gid, maxRadius: n.maxRadius, size: n.size, name: n.name, fillHoles: n.fillHoles
       node = new Node(options)
       node.grow()
       i = 1
@@ -137,8 +140,9 @@ class window.Dungeon
             node.grow @randOpenTile()
             i++
 
-        holes = node.findHoles()
-        if holes? then for tile in holes
-          node.grow(tile)
+        if node.fillHoles is true
+          holes = node.findHoles()
+          if holes? then for tile in holes
+            node.grow(tile)
 
     return null
