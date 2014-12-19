@@ -6,8 +6,7 @@ resize game?
 camera follow mouse?
 
 Node
-  Minimum distance between nodes (place a flag on -1 tiles around nodes that prevents being built on)
-  make hole filling an option
+  minimum number of nodes per map area
 
 Fill empty space with different types of rock
 ###
@@ -44,22 +43,17 @@ class window.Node
 
   getAvailable: (tile) ->
     tile = @cur unless tile?
-    adj = @getAdjacent(tile)
     available = []
-    for dir,tile of adj when tile isnt null and tile.index is -1 and @distFromCenter(tile) <= @maxRadius
+    for dir,tile of @getAdjacent(tile) when tile? and tile.index is -1 and @distFromCenter(tile) <= @maxRadius
       available.push {tile: tile, dir: dir}
+
     return available unless available.length is 0
     return null
 
   findBranch: ->
     hasOpenPath = []
-    for tile in @placedTiles when @getAvailable(tile)?
-      hasOpenPath.push tile
-
-    if hasOpenPath.length > 0
-      @cur = randElem hasOpenPath
-      return @cur
-
+    hasOpenPath.push tile for tile in @placedTiles when @getAvailable(tile)?
+    if hasOpenPath.length > 0 then return @cur = randElem hasOpenPath
     else return null
 
   findHoles: ->
@@ -78,20 +72,10 @@ class window.Node
     return null
 
   grow: (tile) ->
-    if not tile?
-      @map.putTile(@gid,@cur.x,@cur.y,@layer)
-      @placedTiles.push @cur
-      return null
-
-    @cur = tile
+    @cur = tile unless not tile?
     @map.putTile(@gid,@cur.x,@cur.y,@layer)
     @placedTiles.push @cur
     return null
-
-
-
-
-
 
 
 
@@ -104,15 +88,14 @@ class window.Dungeon
     @maxDimen   = Math.max @width,@height
     @tileSize   = options.tileSize or 32
     @nodes      = options.nodes or []
-    @randomness = options.randomness or 5
     @numTiles   = @width*@height unless not @width? or not @height?
     @layer      = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
     @layer.resizeWorld()
       
-  randOpenTile: ->
-    arr = @layer.layer.data
+  randOpenTile: (gid) ->
+    gid = null unless gid?
     open = []
-    for row in arr
+    for row in @layer.layer.data
       for tile in row when tile.index is -1
         open.push tile
 
@@ -121,12 +104,19 @@ class window.Dungeon
 
   build: ->
     for n in @nodes
-      options = dungeon: this, gid: n.gid, maxRadius: n.maxRadius, size: n.size, name: n.name, fillHoles: n.fillHoles
+      options = 
+        dungeon:   this
+        gid:       n.gid
+        maxRadius: n.maxRadius
+        size:      n.size
+        name:      n.name
+        fillHoles: n.fillHoles
+
       node = new Node(options)
-      node.grow()
-      i = 1
-      loop
-        break if not @randOpenTile()? or i >= node.size
+      node.grow() unless not @randOpenTile()?
+
+      for i in [1..node.size] by 1
+        break if not @randOpenTile()?
 
         if node.findBranch()?
           goTo = randElem node.getAvailable()
@@ -136,13 +126,13 @@ class window.Dungeon
           loop
             node.maxRadius++
             break if node.findBranch()? or node.maxRadius >= @maxDimen
+
           if node.maxRadius >= @maxDimen
             node.grow @randOpenTile()
             i++
 
         if node.fillHoles is true
           holes = node.findHoles()
-          if holes? then for tile in holes
-            node.grow(tile)
-
+          if holes? then node.grow(tile) for tile in holes
+            
     return null

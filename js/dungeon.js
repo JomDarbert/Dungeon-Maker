@@ -7,8 +7,7 @@ resize game?
 camera follow mouse?
 
 Node
-  Minimum distance between nodes (place a flag on -1 tiles around nodes that prevents being built on)
-  make hole filling an option
+  minimum number of nodes per map area
 
 Fill empty space with different types of rock
  */
@@ -59,15 +58,15 @@ window.Node = (function() {
   };
 
   Node.prototype.getAvailable = function(tile) {
-    var adj, available, dir;
+    var available, dir, _ref;
     if (tile == null) {
       tile = this.cur;
     }
-    adj = this.getAdjacent(tile);
     available = [];
-    for (dir in adj) {
-      tile = adj[dir];
-      if (tile !== null && tile.index === -1 && this.distFromCenter(tile) <= this.maxRadius) {
+    _ref = this.getAdjacent(tile);
+    for (dir in _ref) {
+      tile = _ref[dir];
+      if ((tile != null) && tile.index === -1 && this.distFromCenter(tile) <= this.maxRadius) {
         available.push({
           tile: tile,
           dir: dir
@@ -91,8 +90,7 @@ window.Node = (function() {
       }
     }
     if (hasOpenPath.length > 0) {
-      this.cur = randElem(hasOpenPath);
-      return this.cur;
+      return this.cur = randElem(hasOpenPath);
     } else {
       return null;
     }
@@ -127,12 +125,9 @@ window.Node = (function() {
   };
 
   Node.prototype.grow = function(tile) {
-    if (tile == null) {
-      this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
-      this.placedTiles.push(this.cur);
-      return null;
+    if (!(tile == null)) {
+      this.cur = tile;
     }
-    this.cur = tile;
     this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
     this.placedTiles.push(this.cur);
     return null;
@@ -153,7 +148,6 @@ window.Dungeon = (function() {
     this.maxDimen = Math.max(this.width, this.height);
     this.tileSize = options.tileSize || 32;
     this.nodes = options.nodes || [];
-    this.randomness = options.randomness || 5;
     if (!((this.width == null) || (this.height == null))) {
       this.numTiles = this.width * this.height;
     }
@@ -161,12 +155,15 @@ window.Dungeon = (function() {
     this.layer.resizeWorld();
   }
 
-  Dungeon.prototype.randOpenTile = function() {
-    var arr, open, row, tile, _i, _j, _len, _len1;
-    arr = this.layer.layer.data;
+  Dungeon.prototype.randOpenTile = function(gid) {
+    var open, row, tile, _i, _j, _len, _len1, _ref;
+    if (gid == null) {
+      gid = null;
+    }
     open = [];
-    for (_i = 0, _len = arr.length; _i < _len; _i++) {
-      row = arr[_i];
+    _ref = this.layer.layer.data;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      row = _ref[_i];
       for (_j = 0, _len1 = row.length; _j < _len1; _j++) {
         tile = row[_j];
         if (tile.index === -1) {
@@ -181,7 +178,7 @@ window.Dungeon = (function() {
   };
 
   Dungeon.prototype.build = function() {
-    var goTo, holes, i, n, node, options, tile, _i, _j, _len, _len1, _ref;
+    var goTo, holes, i, n, node, options, tile, _i, _j, _k, _len, _len1, _ref, _ref1;
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
@@ -194,10 +191,11 @@ window.Dungeon = (function() {
         fillHoles: n.fillHoles
       };
       node = new Node(options);
-      node.grow();
-      i = 1;
-      while (true) {
-        if ((this.randOpenTile() == null) || i >= node.size) {
+      if (!(this.randOpenTile() == null)) {
+        node.grow();
+      }
+      for (i = _j = 1, _ref1 = node.size; _j <= _ref1; i = _j += 1) {
+        if (this.randOpenTile() == null) {
           break;
         }
         if (node.findBranch() != null) {
@@ -219,8 +217,8 @@ window.Dungeon = (function() {
         if (node.fillHoles === true) {
           holes = node.findHoles();
           if (holes != null) {
-            for (_j = 0, _len1 = holes.length; _j < _len1; _j++) {
-              tile = holes[_j];
+            for (_k = 0, _len1 = holes.length; _k < _len1; _k++) {
+              tile = holes[_k];
               node.grow(tile);
             }
           }

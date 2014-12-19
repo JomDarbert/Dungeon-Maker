@@ -30,7 +30,7 @@ playState =
 
     ground = 
       name: "ground"
-      size: 13
+      size: 15
       gid: 0
       maxRadius: 2
       fillHoles: true
