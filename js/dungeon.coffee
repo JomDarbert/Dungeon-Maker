@@ -89,6 +89,8 @@ class window.Dungeon
     @nodes      = options.nodes or []
     @numTiles   = @width*@height unless not @width? or not @height?
     @layer      = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
+    @segments   = @getSegments()
+    console.log @segments
     @layer.resizeWorld()
       
   randOpenTile: (gid) ->
@@ -101,28 +103,36 @@ class window.Dungeon
     if open.length <= 0 then return null
     return randElem(open)
 
-  segment: ->
-    arr = @layer.layer.data
+  getSegments: ->
     segments = []
-    seg_width = @width * 0.2
-    seg_height = @height * 0.2
-
+    seg_width = Math.max 10, @width * 0.2
+    seg_height = Math.max 10, @height * 0.2
     cols_cur = 0
     cols_next = seg_width
     rows_cur = 0
     rows_next = seg_height
+
     loop
-      for col,j in arr when rows_cur < j <= rows_next
-        for row,k in col when cols_cur < k <= cols_next
-          console.log j,k
-      cols_cur += seg_width
-      cols_next += seg_width
-      rows_cur += seg_height
-      rows_next += seg_height
-      break if cols_next > @width or rows_next > @height
+      add = []
+      for row,j in @layer.layer.data when rows_cur <= j < rows_next
+        for col,k in row when cols_cur <= k < cols_next
+          add.push col
+
+      segments.push add
+      if cols_next < @width
+        cols_cur += seg_width
+        cols_next += seg_width
+      else
+        cols_cur = 0
+        cols_next = seg_width
+        rows_cur = rows_next
+        rows_next += seg_height
+
+      break if rows_cur >= @height
+    return segments
+
 
   build: ->
-    @segment()
     for n in @nodes
       options = 
         dungeon:   this

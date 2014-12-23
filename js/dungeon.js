@@ -151,6 +151,8 @@ window.Dungeon = (function() {
       this.numTiles = this.width * this.height;
     }
     this.layer = this.map.create("dungeon", this.width, this.height, this.tileSize, this.tileSize);
+    this.segments = this.getSegments();
+    console.log(this.segments);
     this.layer.resizeWorld();
   }
 
@@ -176,45 +178,48 @@ window.Dungeon = (function() {
     return randElem(open);
   };
 
-  Dungeon.prototype.segment = function() {
-    var arr, col, cols_cur, cols_next, j, k, row, rows_cur, rows_next, seg_height, seg_width, segments, _i, _j, _len, _len1, _results;
-    arr = this.layer.layer.data;
+  Dungeon.prototype.getSegments = function() {
+    var add, col, cols_cur, cols_next, j, k, row, rows_cur, rows_next, seg_height, seg_width, segments, _i, _j, _len, _len1, _ref;
     segments = [];
-    seg_width = this.width * 0.2;
-    seg_height = this.height * 0.2;
+    seg_width = Math.max(10, this.width * 0.2);
+    seg_height = Math.max(10, this.height * 0.2);
     cols_cur = 0;
     cols_next = seg_width;
     rows_cur = 0;
     rows_next = seg_height;
-    _results = [];
     while (true) {
-      for (j = _i = 0, _len = arr.length; _i < _len; j = ++_i) {
-        col = arr[j];
-        if ((rows_cur < j && j <= rows_next)) {
-          for (k = _j = 0, _len1 = col.length; _j < _len1; k = ++_j) {
-            row = col[k];
-            if ((cols_cur < k && k <= cols_next)) {
-              console.log(j, k);
+      add = [];
+      _ref = this.layer.layer.data;
+      for (j = _i = 0, _len = _ref.length; _i < _len; j = ++_i) {
+        row = _ref[j];
+        if ((rows_cur <= j && j < rows_next)) {
+          for (k = _j = 0, _len1 = row.length; _j < _len1; k = ++_j) {
+            col = row[k];
+            if ((cols_cur <= k && k < cols_next)) {
+              add.push(col);
             }
           }
         }
       }
-      cols_cur += seg_width;
-      cols_next += seg_width;
-      rows_cur += seg_height;
-      rows_next += seg_height;
-      if (cols_next > this.width || rows_next > this.height) {
-        break;
+      segments.push(add);
+      if (cols_next < this.width) {
+        cols_cur += seg_width;
+        cols_next += seg_width;
       } else {
-        _results.push(void 0);
+        cols_cur = 0;
+        cols_next = seg_width;
+        rows_cur = rows_next;
+        rows_next += seg_height;
+      }
+      if (rows_cur >= this.height) {
+        break;
       }
     }
-    return _results;
+    return segments;
   };
 
   Dungeon.prototype.build = function() {
     var goTo, holes, i, n, node, options, tile, _i, _j, _k, _len, _len1, _ref, _ref1;
-    this.segment();
     _ref = this.nodes;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
