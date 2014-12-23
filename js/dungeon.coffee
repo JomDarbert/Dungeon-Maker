@@ -102,9 +102,27 @@ class window.Dungeon
     return randElem(open)
 
   segment: ->
+    arr = @layer.layer.data
+    segments = []
+    seg_width = @width * 0.2
+    seg_height = @height * 0.2
 
+    cols_cur = 0
+    cols_next = seg_width
+    rows_cur = 0
+    rows_next = seg_height
+    loop
+      for col,j in arr when rows_cur < j <= rows_next
+        for row,k in col when cols_cur < k <= cols_next
+          console.log j,k
+      cols_cur += seg_width
+      cols_next += seg_width
+      rows_cur += seg_height
+      rows_next += seg_height
+      break if cols_next > @width or rows_next > @height
 
   build: ->
+    @segment()
     for n in @nodes
       options = 
         dungeon:   this
