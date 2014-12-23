@@ -1,5 +1,4 @@
 ###
-Need a fix for spidering resources
 Clear dungeon
 Button for testing
 resize game?
@@ -101,6 +100,9 @@ class window.Dungeon
 
     if open.length <= 0 then return null
     return randElem(open)
+
+  segment: ->
+
 
   build: ->
     for n in @nodes

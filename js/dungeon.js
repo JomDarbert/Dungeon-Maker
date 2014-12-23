@@ -1,6 +1,5 @@
 
 /*
-Need a fix for spidering resources
 Clear dungeon
 Button for testing
 resize game?
@@ -176,6 +175,8 @@ window.Dungeon = (function() {
     }
     return randElem(open);
   };
+
+  Dungeon.prototype.segment = function() {};
 
   Dungeon.prototype.build = function() {
     var goTo, holes, i, n, node, options, tile, _i, _j, _k, _len, _len1, _ref, _ref1;

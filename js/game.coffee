@@ -1,6 +1,6 @@
 t = 32
-w = t*10
-h = t*8
+w = t*20
+h = t*20
 
 game = new Phaser.Game(w,h, Phaser.AUTO, "game")
 
