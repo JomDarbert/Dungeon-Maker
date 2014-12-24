@@ -89,24 +89,41 @@ class window.Dungeon
     @nodes      = options.nodes or []
     @numTiles   = @width*@height unless not @width? or not @height?
     @layer      = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
-    @segments   = @getSegments()
-    console.log @segments
     @layer.resizeWorld()
-      
-  randOpenTile: (gid) ->
-    gid = null unless gid?
+
+  dungeonFull: ->
     open = []
-    for row in @layer.layer.data
-      for tile in row when tile.index is -1
-        open.push tile
+    @map.forEach( (tile) ->
+      if tile.index is -1 then open.push tile
+    ,this,0,0,@width,@height,@layer)
+    if open.length is 0 then return true
+    else return null
+      
+  randOpenTile: () ->
+    open = []
+    open_seg = []
+    segments = @getSegments()
+
+    for seg in segments
+      filled = 0
+      filled++ for tile in seg when tile.index isnt -1
+      if filled <= seg.length * 0.1 then open_seg.push seg
+
+    if open_seg.length > 0
+      for seg in open_seg
+        open.push tile for tile in seg when tile.index is -1
+    else
+      for row in @layer.layer.data
+        open.push tile for tile in row when tile.index is -1
 
     if open.length <= 0 then return null
     return randElem(open)
 
-  getSegments: ->
+  getSegments: (pct) ->
+    pct = 0.5 unless pct?
     segments = []
-    seg_width = Math.max 10, @width * 0.2
-    seg_height = Math.max 10, @height * 0.2
+    seg_width = @width * pct
+    seg_height = @height * pct
     cols_cur = 0
     cols_next = seg_width
     rows_cur = 0
@@ -143,10 +160,10 @@ class window.Dungeon
         fillHoles: n.fillHoles
 
       node = new Node(options)
-      node.grow() unless not @randOpenTile()?
+      node.grow() unless @dungeonFull()?
 
       for i in [1..node.size] by 1
-        break if not @randOpenTile()?
+        break if @dungeonFull()?
 
         if node.findBranch()?
           goTo = randElem node.getAvailable()

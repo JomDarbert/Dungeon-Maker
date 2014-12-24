@@ -151,24 +151,61 @@ window.Dungeon = (function() {
       this.numTiles = this.width * this.height;
     }
     this.layer = this.map.create("dungeon", this.width, this.height, this.tileSize, this.tileSize);
-    this.segments = this.getSegments();
-    console.log(this.segments);
     this.layer.resizeWorld();
   }
 
-  Dungeon.prototype.randOpenTile = function(gid) {
-    var open, row, tile, _i, _j, _len, _len1, _ref;
-    if (gid == null) {
-      gid = null;
-    }
+  Dungeon.prototype.dungeonFull = function() {
+    var open;
     open = [];
-    _ref = this.layer.layer.data;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      row = _ref[_i];
-      for (_j = 0, _len1 = row.length; _j < _len1; _j++) {
-        tile = row[_j];
-        if (tile.index === -1) {
-          open.push(tile);
+    this.map.forEach(function(tile) {
+      if (tile.index === -1) {
+        return open.push(tile);
+      }
+    }, this, 0, 0, this.width, this.height, this.layer);
+    if (open.length === 0) {
+      return true;
+    } else {
+      return null;
+    }
+  };
+
+  Dungeon.prototype.randOpenTile = function() {
+    var filled, open, open_seg, row, seg, segments, tile, _i, _j, _k, _l, _len, _len1, _len2, _len3, _len4, _len5, _m, _n, _ref;
+    open = [];
+    open_seg = [];
+    segments = this.getSegments();
+    for (_i = 0, _len = segments.length; _i < _len; _i++) {
+      seg = segments[_i];
+      filled = 0;
+      for (_j = 0, _len1 = seg.length; _j < _len1; _j++) {
+        tile = seg[_j];
+        if (tile.index !== -1) {
+          filled++;
+        }
+      }
+      if (filled <= seg.length * 0.1) {
+        open_seg.push(seg);
+      }
+    }
+    if (open_seg.length > 0) {
+      for (_k = 0, _len2 = open_seg.length; _k < _len2; _k++) {
+        seg = open_seg[_k];
+        for (_l = 0, _len3 = seg.length; _l < _len3; _l++) {
+          tile = seg[_l];
+          if (tile.index === -1) {
+            open.push(tile);
+          }
+        }
+      }
+    } else {
+      _ref = this.layer.layer.data;
+      for (_m = 0, _len4 = _ref.length; _m < _len4; _m++) {
+        row = _ref[_m];
+        for (_n = 0, _len5 = row.length; _n < _len5; _n++) {
+          tile = row[_n];
+          if (tile.index === -1) {
+            open.push(tile);
+          }
         }
       }
     }
@@ -178,11 +215,14 @@ window.Dungeon = (function() {
     return randElem(open);
   };
 
-  Dungeon.prototype.getSegments = function() {
+  Dungeon.prototype.getSegments = function(pct) {
     var add, col, cols_cur, cols_next, j, k, row, rows_cur, rows_next, seg_height, seg_width, segments, _i, _j, _len, _len1, _ref;
+    if (pct == null) {
+      pct = 0.5;
+    }
     segments = [];
-    seg_width = Math.max(10, this.width * 0.2);
-    seg_height = Math.max(10, this.height * 0.2);
+    seg_width = this.width * pct;
+    seg_height = this.height * pct;
     cols_cur = 0;
     cols_next = seg_width;
     rows_cur = 0;
@@ -232,11 +272,11 @@ window.Dungeon = (function() {
         fillHoles: n.fillHoles
       };
       node = new Node(options);
-      if (!(this.randOpenTile() == null)) {
+      if (this.dungeonFull() == null) {
         node.grow();
       }
       for (i = _j = 1, _ref1 = node.size; _j <= _ref1; i = _j += 1) {
-        if (this.randOpenTile() == null) {
+        if (this.dungeonFull() != null) {
           break;
         }
         if (node.findBranch() != null) {
