@@ -1,3 +1,6 @@
+class window.Selection
+  constructor: ->
+
 playState =
   preload: ->
     game.load.image "player", "assets/star.png"
@@ -79,5 +82,8 @@ playState =
 
   select: (ptr) ->
     tile = @map.getTileWorldXY(ptr.x,ptr.y,tileSize,tileSize,@layer)
-    tile.index = -1
+    console.log tile
+    if tile?
+      sprite = game.add.sprite tile.x*tileSize,tile.y*tileSize,'ground'
+      sprite.alpha = 0.5
     return null

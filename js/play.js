@@ -1,5 +1,12 @@
 var playState;
 
+window.Selection = (function() {
+  function Selection() {}
+
+  return Selection;
+
+})();
+
 playState = {
   preload: function() {
     game.load.image("player", "assets/star.png");
@@ -75,9 +82,13 @@ playState = {
      */
   },
   select: function(ptr) {
-    var tile;
+    var sprite, tile;
     tile = this.map.getTileWorldXY(ptr.x, ptr.y, tileSize, tileSize, this.layer);
-    tile.index = -1;
+    console.log(tile);
+    if (tile != null) {
+      sprite = game.add.sprite(tile.x * tileSize, tile.y * tileSize, 'ground');
+      sprite.alpha = 0.5;
+    }
     return null;
   }
 };
