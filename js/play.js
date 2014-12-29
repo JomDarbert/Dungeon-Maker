@@ -7,21 +7,16 @@ playState = {
     game.load.image("wall", "assets/wall.png");
     game.load.image("water", "assets/water.png");
     game.load.image("lava", "assets/lava.png");
-    return this.map = game.add.tilemap();
+    this.map = game.add.tilemap();
+    return game.stage.backgroundColor = "#2d2d2d";
   },
   create: function() {
-    var a, dung, ground, h, lava, nodes, options, t, w, wall, water;
-    game.stage.backgroundColor = "#3498db";
-
-    /*
-    game.physics.startSystem Phaser.Physics.ARCADE
-    
-    @player = game.add.sprite(game.world.centerX, game.world.centerY, 'player')
-    @player.anchor.setTo 0.5, 0.5
-    
-    game.physics.arcade.enable @player
-    game.input.onDown.add @moveSprite, this
-     */
+    var a, ground, h, lava, nodes, options, t, w, wall, water;
+    this.player = game.add.sprite(game.world.centerX, game.world.centerY, 'player');
+    this.player.anchor.setTo(0.5, 0.5);
+    game.physics.enable(this.player, Phaser.Physics.ARCADE);
+    this.player.body.collideWorldBounds = true;
+    game.input.onDown.add(this.select, this);
     this.map.addTilesetImage("ground", "ground", 32, 32, null, null, 0);
     this.map.addTilesetImage("wall", "wall", 32, 32, null, null, 1);
     this.map.addTilesetImage("water", "water", 32, 32, null, null, 2);
@@ -32,13 +27,13 @@ playState = {
     a = w * h;
     ground = {
       name: "ground",
-      size: 13,
+      size: 15,
       gid: 0,
       maxRadius: 2,
       fillHoles: true
     };
     wall = {
-      name: "ground",
+      name: "wall",
       size: 13,
       gid: 1,
       maxRadius: 2,
@@ -66,21 +61,23 @@ playState = {
       map: this.map,
       nodes: nodes
     };
-    dung = new window.Dungeon(options);
-    dung.build();
+    this.dung = new window.Dungeon(options);
+    this.dung.build();
   },
-  update: function() {},
-  moveSprite: function(ptr) {
-    var duration, speed, sprite, tween;
-    sprite = this.player;
-    speed = 300;
-    if (tween && tween.isRunning) {
-      tween.stop();
-    }
-    duration = (game.physics.arcade.distanceToPointer(sprite, ptr) / speed) * 1000;
-    tween = game.add.tween(sprite).to({
-      x: ptr.x,
-      y: ptr.y
-    }, duration, Phaser.Easing.Linear.None, true);
+  update: function() {
+
+    /*
+    grp = @dung.nodes[0].group
+    if @overlap(@player,grp) and @player.activeTween?
+       *console.log @player
+      @player.activeTween.stop()
+      @player.activeTween = null
+     */
+  },
+  select: function(ptr) {
+    var tile;
+    tile = this.map.getTileWorldXY(ptr.x, ptr.y, tileSize, tileSize, this.layer);
+    tile.index = -1;
+    return null;
   }
 };

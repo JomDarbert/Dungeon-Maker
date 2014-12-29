@@ -6,18 +6,17 @@ playState =
     game.load.image "water", "assets/water.png"
     game.load.image "lava", "assets/lava.png"
     @map = game.add.tilemap()
+    game.stage.backgroundColor = "#2d2d2d"
+
 
   create: ->
-    game.stage.backgroundColor = "#3498db"
-    ###
-    game.physics.startSystem Phaser.Physics.ARCADE
-
     @player = game.add.sprite(game.world.centerX, game.world.centerY, 'player')
     @player.anchor.setTo 0.5, 0.5
+    game.physics.enable @player, Phaser.Physics.ARCADE
+    @player.body.collideWorldBounds = true
+    game.input.onDown.add @select, this
 
-    game.physics.arcade.enable @player
-    game.input.onDown.add @moveSprite, this
-    ###
+    # CREATE DUNGEON TILES
     @map.addTilesetImage("ground","ground",32,32,null,null,0)
     @map.addTilesetImage("wall","wall",32,32,null,null,1)
     @map.addTilesetImage("water","water",32,32,null,null,2)
@@ -36,7 +35,7 @@ playState =
       fillHoles: true
 
     wall =
-      name: "ground"
+      name: "wall"
       size: 13
       gid: 1
       maxRadius: 2
@@ -65,18 +64,20 @@ playState =
       map: @map
       nodes: nodes
 
-    dung = new window.Dungeon(options)
-    dung.build()
-
+    @dung = new window.Dungeon(options)
+    @dung.build()
     return
 
   update: ->
-    #game.physics.arcade.collide(@player,@layer)
+    ###
+    grp = @dung.nodes[0].group
+    if @overlap(@player,grp) and @player.activeTween?
+      #console.log @player
+      @player.activeTween.stop()
+      @player.activeTween = null
+    ###
 
-  moveSprite: (ptr) ->
-    sprite = @player
-    speed = 300
-    tween.stop() if tween and tween.isRunning
-    duration = (game.physics.arcade.distanceToPointer(sprite, ptr) / speed) * 1000
-    tween = game.add.tween(sprite).to( {x: ptr.x, y: ptr.y}, duration, Phaser.Easing.Linear.None, true)
-    return
+  select: (ptr) ->
+    tile = @map.getTileWorldXY(ptr.x,ptr.y,tileSize,tileSize,@layer)
+    tile.index = -1
+    return null

@@ -1,6 +1,6 @@
-t = 32
-w = t*20
-h = t*20
+tileSize = 32
+w = tileSize*20
+h = tileSize*20
 
 game = new Phaser.Game(w,h, Phaser.AUTO, "game")
 

@@ -4,8 +4,7 @@ Button for testing
 resize game?
 camera follow mouse?
 
-Node
-  minimum number of nodes per map area
+collision when creating tile
 
 Fill empty space with different types of rock
 ###
@@ -24,6 +23,7 @@ class window.Node
     @layer       = @dungeon.layer
     @map         = @dungeon.map
     @index       = @map.getLayer()
+    @group       = game.add.group()
     @center      = @dungeon.randOpenTile()
     @cur         = @center
     @placedTiles = []
@@ -74,6 +74,9 @@ class window.Node
     @cur = tile unless not tile?
     @map.putTile(@gid,@cur.x,@cur.y,@layer)
     @placedTiles.push @cur
+
+    t = @dungeon.tileSize
+    @group.create @cur.x*t,@cur.y*t,@name
     return null
 
 
@@ -86,9 +89,11 @@ class window.Dungeon
     @height     = options.height or 20
     @maxDimen   = Math.max @width,@height
     @tileSize   = options.tileSize or 32
-    @nodes      = options.nodes or []
+    @nodeIn     = options.nodes or []
+    @nodes      = []
     @numTiles   = @width*@height unless not @width? or not @height?
     @layer      = @map.create("dungeon", @width, @height, @tileSize, @tileSize)
+    @layer.debug = true
     @layer.resizeWorld()
 
   dungeonFull: ->
@@ -150,7 +155,7 @@ class window.Dungeon
 
 
   build: ->
-    for n in @nodes
+    for n in @nodeIn
       options = 
         dungeon:   this
         gid:       n.gid
@@ -160,6 +165,7 @@ class window.Dungeon
         fillHoles: n.fillHoles
 
       node = new Node(options)
+      @nodes.push node
       node.grow() unless @dungeonFull()?
 
       for i in [1..node.size] by 1

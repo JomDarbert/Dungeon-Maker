@@ -5,8 +5,7 @@ Button for testing
 resize game?
 camera follow mouse?
 
-Node
-  minimum number of nodes per map area
+collision when creating tile
 
 Fill empty space with different types of rock
  */
@@ -31,6 +30,7 @@ window.Node = (function() {
     this.layer = this.dungeon.layer;
     this.map = this.dungeon.map;
     this.index = this.map.getLayer();
+    this.group = game.add.group();
     this.center = this.dungeon.randOpenTile();
     this.cur = this.center;
     this.placedTiles = [];
@@ -124,11 +124,14 @@ window.Node = (function() {
   };
 
   Node.prototype.grow = function(tile) {
+    var t;
     if (!(tile == null)) {
       this.cur = tile;
     }
     this.map.putTile(this.gid, this.cur.x, this.cur.y, this.layer);
     this.placedTiles.push(this.cur);
+    t = this.dungeon.tileSize;
+    this.group.create(this.cur.x * t, this.cur.y * t, this.name);
     return null;
   };
 
@@ -146,11 +149,13 @@ window.Dungeon = (function() {
     this.height = options.height || 20;
     this.maxDimen = Math.max(this.width, this.height);
     this.tileSize = options.tileSize || 32;
-    this.nodes = options.nodes || [];
+    this.nodeIn = options.nodes || [];
+    this.nodes = [];
     if (!((this.width == null) || (this.height == null))) {
       this.numTiles = this.width * this.height;
     }
     this.layer = this.map.create("dungeon", this.width, this.height, this.tileSize, this.tileSize);
+    this.layer.debug = true;
     this.layer.resizeWorld();
   }
 
@@ -260,7 +265,7 @@ window.Dungeon = (function() {
 
   Dungeon.prototype.build = function() {
     var goTo, holes, i, n, node, options, tile, _i, _j, _k, _len, _len1, _ref, _ref1;
-    _ref = this.nodes;
+    _ref = this.nodeIn;
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       n = _ref[_i];
       options = {
@@ -272,6 +277,7 @@ window.Dungeon = (function() {
         fillHoles: n.fillHoles
       };
       node = new Node(options);
+      this.nodes.push(node);
       if (this.dungeonFull() == null) {
         node.grow();
       }
