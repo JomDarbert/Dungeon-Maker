@@ -1,12 +1,4 @@
-var playState,
-  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
-
-window.Selection = (function() {
-  function Selection() {}
-
-  return Selection;
-
-})();
+var playState;
 
 playState = {
   preload: function() {
@@ -20,7 +12,6 @@ playState = {
   },
   create: function() {
     var a, ground, h, lava, nodes, options, w, wall, water;
-    game.input.onDown.add(this.select, this);
     this.map.addTilesetImage("ground", "ground", 32, 32, null, null, 0);
     this.map.addTilesetImage("wall", "wall", 32, 32, null, null, 1);
     this.map.addTilesetImage("water", "water", 32, 32, null, null, 2);
@@ -66,39 +57,35 @@ playState = {
     };
     this.dung = new window.Dungeon(options);
     this.dung.build();
-    this.selection = {
-      tiles: [],
-      sprites: game.add.group()
-    };
+    this.selection = [];
   },
   update: function() {
-
-    /*
-    grp = @dung.nodes[0].group
-    if @overlap(@player,grp) and @player.activeTween?
-       *console.log @player
-      @player.activeTween.stop()
-      @player.activeTween = null
-     */
-  },
-  select: function(ptr) {
-    var sprite, tile;
-    tile = this.map.getTileWorldXY(ptr.x, ptr.y, tileSize, tileSize, this.layer);
-    if ((tile != null) && __indexOf.call(this.selection.tiles, tile) >= 0) {
-      this.selection.tiles = this.selection.tiles.filter(function(t) {
-        return t !== tile;
-      });
-    } else if (tile != null) {
-      this.selection.tiles.push(tile);
-      sprite = this.selection.sprites.create(tile.x * tileSize, tile.y * tileSize, 'ground');
-      sprite.inputEnabled = true;
-      sprite.events.onInputOver.add(this.deselect, this);
+    var esc, ptr, tile, _i, _len, _ref;
+    ptr = game.input.mousePointer;
+    esc = game.input.keyboard.addKey(Phaser.Keyboard.ESC);
+    if (esc.isDown) {
+      _ref = this.selection;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        tile = _ref[_i];
+        this.map.putTile(tile.index, tile.x, tile.y);
+      }
+      this.selection = [];
     }
-    return null;
-  },
-  deselect: function(sprite, ptr) {
     if (ptr.isDown) {
-      return sprite.kill();
+      return this.map.putTile(0, ptr.x, ptr.y);
+
+      /*
+      tile = @map.getTileWorldXY(ptr.x,ptr.y,tileSize,tileSize,@layer)
+      if tile? and tile not in @selection
+        @selection.push tile
+        new_tile = tile
+        new_tile.index = 0
+        @map.putTile(new_tile,tile.x,tile.y)
+        console.log @selection
+      if tile? and tile in @selection
+        return
+         *unselect
+       */
     }
   }
 };

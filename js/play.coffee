@@ -1,6 +1,3 @@
-class window.Selection
-  constructor: ->
-
 playState =
   preload: ->
     game.load.image "player", "assets/star.png"
@@ -13,7 +10,6 @@ playState =
 
 
   create: ->
-    game.input.onDown.add @select, this
 
     # CREATE DUNGEON TILES
     @map.addTilesetImage("ground","ground",32,32,null,null,0)
@@ -36,31 +32,31 @@ playState =
     @dung.build()
 
     # CREATE SELECTION HOLDER
-    @selection = tiles: [], sprites: game.add.group()
+    @selection = []
     return
 
   update: ->
-    ###
-    grp = @dung.nodes[0].group
-    if @overlap(@player,grp) and @player.activeTween?
-      #console.log @player
-      @player.activeTween.stop()
-      @player.activeTween = null
-    ###
+    ptr = game.input.mousePointer
+    esc = game.input.keyboard.addKey(Phaser.Keyboard.ESC)
 
-  select: (ptr) ->
-    #doesn't need to be sprite, just tiles?
-    # maybe createFromTiles?
-    tile = @map.getTileWorldXY(ptr.x,ptr.y,tileSize,tileSize,@layer)
-    if tile? and tile in @selection.tiles
-      @selection.tiles = @selection.tiles.filter (t) -> t isnt tile
+    if esc.isDown
+      @map.putTile(tile.index,tile.x,tile.y) for tile in @selection
+      @selection = []
 
-    else if tile?
-      @selection.tiles.push tile
-      sprite = @selection.sprites.create(tile.x*tileSize,tile.y*tileSize,'ground')
-      sprite.inputEnabled = true
-      sprite.events.onInputOver.add(@deselect, this)
-    return null
+    if ptr.isDown
 
-  deselect: (sprite, ptr) ->
-    if ptr.isDown then sprite.kill()
+      @map.putTile(0,ptr.x,ptr.y)
+      #why isn't putTile rendering?
+      
+      ###
+      tile = @map.getTileWorldXY(ptr.x,ptr.y,tileSize,tileSize,@layer)
+      if tile? and tile not in @selection
+        @selection.push tile
+        new_tile = tile
+        new_tile.index = 0
+        @map.putTile(new_tile,tile.x,tile.y)
+        console.log @selection
+      if tile? and tile in @selection
+        return
+        #unselect
+      ###
