@@ -13,10 +13,6 @@ playState =
 
 
   create: ->
-    @player = game.add.sprite(game.world.centerX, game.world.centerY, 'player')
-    @player.anchor.setTo 0.5, 0.5
-    game.physics.enable @player, Phaser.Physics.ARCADE
-    @player.body.collideWorldBounds = true
     game.input.onDown.add @select, this
 
     # CREATE DUNGEON TILES
@@ -25,50 +21,22 @@ playState =
     @map.addTilesetImage("water","water",32,32,null,null,2)
     @map.addTilesetImage("lava","lava",32,32,null,null,3)
 
-    t = 32
-    w = game.width/t
-    h = game.height/t
+    w = game.width/tileSize
+    h = game.height/tileSize
     a = w*h
 
-    ground = 
-      name: "ground"
-      size: 15
-      gid: 0
-      maxRadius: 2
-      fillHoles: true
+    ground = name: "ground", size: 15, gid: 0, maxRadius: 2, fillHoles: true
+    wall   = name: "wall",   size: 13, gid: 1, maxRadius: 2, fillHoles: true
+    water  = name: "water",  size: 13, gid: 2, maxRadius: 2, fillHoles: true
+    lava   = name: "lava",   size: 13, gid: 3, maxRadius: 2, fillHoles: true
+    nodes  = [ground,wall,water,lava]
 
-    wall =
-      name: "wall"
-      size: 13
-      gid: 1
-      maxRadius: 2
-      fillHoles: true
-
-    water =
-      name: "water"
-      size: 13
-      gid: 2
-      maxRadius: 2
-      fillHoles: true
-
-    lava =
-      name: "lava"
-      size: 13
-      gid: 3
-      maxRadius: 2
-      fillHoles: true
-
-    nodes = [ground,wall,water,lava]
-
-    options = 
-      width: w
-      height: h
-      tileSize: t
-      map: @map
-      nodes: nodes
-
+    options = width: w, height: h, tileSize: tileSize, map: @map, nodes: nodes
     @dung = new window.Dungeon(options)
     @dung.build()
+
+    # CREATE SELECTION HOLDER
+    @selection = tiles: [], sprites: game.add.group()
     return
 
   update: ->
@@ -81,9 +49,18 @@ playState =
     ###
 
   select: (ptr) ->
+    #doesn't need to be sprite, just tiles?
+    # maybe createFromTiles?
     tile = @map.getTileWorldXY(ptr.x,ptr.y,tileSize,tileSize,@layer)
-    console.log tile
-    if tile?
-      sprite = game.add.sprite tile.x*tileSize,tile.y*tileSize,'ground'
-      sprite.alpha = 0.5
+    if tile? and tile in @selection.tiles
+      @selection.tiles = @selection.tiles.filter (t) -> t isnt tile
+
+    else if tile?
+      @selection.tiles.push tile
+      sprite = @selection.sprites.create(tile.x*tileSize,tile.y*tileSize,'ground')
+      sprite.inputEnabled = true
+      sprite.events.onInputOver.add(@deselect, this)
     return null
+
+  deselect: (sprite, ptr) ->
+    if ptr.isDown then sprite.kill()

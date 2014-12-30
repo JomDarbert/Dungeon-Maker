@@ -1,4 +1,5 @@
-var playState;
+var playState,
+  __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
 window.Selection = (function() {
   function Selection() {}
@@ -18,19 +19,14 @@ playState = {
     return game.stage.backgroundColor = "#2d2d2d";
   },
   create: function() {
-    var a, ground, h, lava, nodes, options, t, w, wall, water;
-    this.player = game.add.sprite(game.world.centerX, game.world.centerY, 'player');
-    this.player.anchor.setTo(0.5, 0.5);
-    game.physics.enable(this.player, Phaser.Physics.ARCADE);
-    this.player.body.collideWorldBounds = true;
+    var a, ground, h, lava, nodes, options, w, wall, water;
     game.input.onDown.add(this.select, this);
     this.map.addTilesetImage("ground", "ground", 32, 32, null, null, 0);
     this.map.addTilesetImage("wall", "wall", 32, 32, null, null, 1);
     this.map.addTilesetImage("water", "water", 32, 32, null, null, 2);
     this.map.addTilesetImage("lava", "lava", 32, 32, null, null, 3);
-    t = 32;
-    w = game.width / t;
-    h = game.height / t;
+    w = game.width / tileSize;
+    h = game.height / tileSize;
     a = w * h;
     ground = {
       name: "ground",
@@ -64,12 +60,16 @@ playState = {
     options = {
       width: w,
       height: h,
-      tileSize: t,
+      tileSize: tileSize,
       map: this.map,
       nodes: nodes
     };
     this.dung = new window.Dungeon(options);
     this.dung.build();
+    this.selection = {
+      tiles: [],
+      sprites: game.add.group()
+    };
   },
   update: function() {
 
@@ -84,11 +84,21 @@ playState = {
   select: function(ptr) {
     var sprite, tile;
     tile = this.map.getTileWorldXY(ptr.x, ptr.y, tileSize, tileSize, this.layer);
-    console.log(tile);
-    if (tile != null) {
-      sprite = game.add.sprite(tile.x * tileSize, tile.y * tileSize, 'ground');
-      sprite.alpha = 0.5;
+    if ((tile != null) && __indexOf.call(this.selection.tiles, tile) >= 0) {
+      this.selection.tiles = this.selection.tiles.filter(function(t) {
+        return t !== tile;
+      });
+    } else if (tile != null) {
+      this.selection.tiles.push(tile);
+      sprite = this.selection.sprites.create(tile.x * tileSize, tile.y * tileSize, 'ground');
+      sprite.inputEnabled = true;
+      sprite.events.onInputOver.add(this.deselect, this);
     }
     return null;
+  },
+  deselect: function(sprite, ptr) {
+    if (ptr.isDown) {
+      return sprite.kill();
+    }
   }
 };
