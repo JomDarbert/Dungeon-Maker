@@ -7,6 +7,8 @@ camera follow mouse?
 collision when creating tile
 
 Fill empty space with different types of rock
+
+add sprites instead of tiles!!!
 ###
 window.randElem = (arr) -> return arr[Math.floor(Math.random()*arr.length)]
 
